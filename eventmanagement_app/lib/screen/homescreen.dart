@@ -1,5 +1,6 @@
 import 'package:eventmanagement_app/screen/eventscreen.dart';
 import 'package:eventmanagement_app/screen/loginscreen.dart';
+import 'package:eventmanagement_app/screen/scanscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart' as carousel; // Correct aliased import
@@ -20,7 +21,7 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
 
-  void _onItemTapped(int index) {
+  Future<void> _onItemTapped(int index) async {
     setState(() {
       selectedIndex = index;
     });
@@ -30,6 +31,22 @@ class HomeScreenState extends State<HomeScreen> {
         builder: (context) => const EventScreen(),
       ));
     }
+  
+  if (index == 2) {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const ScanScreen()),
+  );
+
+  if (result != null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text("Scanned: $result")),
+    );
+
+    // Handle the scanned QR data, e.g., mark attendance
+  }
+}
+
 
   if (index==3){
       Navigator.push(context, MaterialPageRoute(
