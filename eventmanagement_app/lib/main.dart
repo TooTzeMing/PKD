@@ -3,8 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screen/loginscreen.dart';
 import 'screen/signupscreen.dart';
-import 'screen/homescreen.dart';
-import 'screen/generateCode.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +14,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'My App',
+      title: 'PKD Smart',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      home: const LoginScreen(), // Set LoginScreen as the home screen
       routes: {
-        "/generate": (context) => const Generatecode(),
+        '/signup': (context) => const SignupScreen(),
+        '/login': (context) => const LoginScreen(),
       },
-      home: HomeScreen(),
       debugShowCheckedModeBanner: false, // Hide the debug banner (optional)
     );
   }

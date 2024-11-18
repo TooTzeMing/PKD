@@ -53,11 +53,12 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCj1_f2CSovWRDqeNqD7bIWYejbdeFjf6Q',
-    appId: '1:713939514182:android:df8c1cb17f4cf264fe2b47',
-    messagingSenderId: '713939514182',
-    projectId: 'event-management-1601f',
-    storageBucket: 'event-management-1601f.firebasestorage.app',
+    apiKey: 'AIzaSyCT5bX-Vge0XLfRtX6e7Esq6f_TSCAj3Ac',
+    appId: '1:1056938569397:android:a57124460b1d63c1bfd8fc',
+    messagingSenderId: '1056938569397',
+    projectId: 'pkd-smart',
+    databaseURL: 'https://pkd-smart-default-rtdb.asia-southeast1.firebasedatabase.app',
+    storageBucket: 'pkd-smart.firebasestorage.app',
   );
 
 }

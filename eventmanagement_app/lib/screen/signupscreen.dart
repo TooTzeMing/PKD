@@ -1,7 +1,26 @@
+import 'package:eventmanagement_app/services/auth_services.dart';
 import 'package:flutter/material.dart';
 
-class SignupScreen extends StatelessWidget {
+class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -9,14 +28,13 @@ class SignupScreen extends StatelessWidget {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Back icon button at the top left
           Positioned(
-            top: 50, // Position it as needed
+            top: 50,
             left: 16,
             child: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
               onPressed: () {
-                Navigator.pop(context); // Navigate back
+                Navigator.pop(context);
               },
             ),
           ),
@@ -26,7 +44,6 @@ class SignupScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Sign Up Title
                   Text(
                     'Sign Up',
                     style: TextStyle(
@@ -37,8 +54,6 @@ class SignupScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 30),
-
-                  // Username TextField
                   TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.people),
@@ -51,9 +66,8 @@ class SignupScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 25),
-
-                  // Email TextField
                   TextField(
+                    controller: _emailController,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.email_outlined),
                       hintText: 'Email',
@@ -65,10 +79,9 @@ class SignupScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 25),
-
-                  // Password TextField
                   TextField(
                     obscureText: true,
+                    controller: _passwordController,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline),
                       hintText: 'Password',
@@ -80,10 +93,9 @@ class SignupScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 25),
-
-                  // Confirm Password TextField
                   TextField(
                     obscureText: true,
+                    controller: _confirmPasswordController,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.lock_outline),
                       hintText: 'Confirm Password',
@@ -95,35 +107,50 @@ class SignupScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 25),
-
-                  // Signup Button
-                  Container(
-                    margin:
-                        const EdgeInsets.only(top: 30), // Add top margin here
-                    child: SizedBox(
-                      width: 200,
-                      height: 50,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                  SizedBox(
+                    width: 200,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        onPressed: () {
-                          // Handle login action here
-                        },
-                        child: const Text(
-                          'Signup',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                          ),
+                      ),
+                      onPressed: () async {
+                        debugPrint("kek");
+                        if (_passwordController.text !=
+                            _confirmPasswordController.text) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text('Passwords do not match!')),
+                          );
+                          return;
+                        }
+
+                        try {
+                          await AuthService().signUp(
+                            email: _emailController.text,
+                            password: _passwordController.text,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Signup successful!')),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Error: ${e.toString()}')),
+                          );
+                        }
+                      },
+                      child: const Text(
+                        'Signup',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
                 ],
               ),
             ),

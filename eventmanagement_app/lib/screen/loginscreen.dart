@@ -15,7 +15,7 @@ class LoginScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // Logo
-             Image.asset(
+              Image.asset(
                 'assets/gladiator_logo.png', // Path to your logo
                 height: 200, // Adjust height as needed
                 width: 200, // Adjust width as needed
@@ -62,9 +62,7 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    // Handle login action here
-                  },
+                  onPressed: () {},
                   child: const Text(
                     'Login',
                     style: TextStyle(
@@ -99,9 +97,7 @@ class LoginScreen extends StatelessWidget {
 
               // Forgot password option
               TextButton(
-                onPressed: () {
-                  // Handle forgot password action here
-                },
+                onPressed: () {},
                 child: const Text(
                   'Forgot Password?',
                   style: TextStyle(color: Colors.black),
@@ -166,10 +162,6 @@ class LoginScreen extends StatelessWidget {
           ),
         ),
       ),
-
-
     );
-
-
-}
+  }
 }
