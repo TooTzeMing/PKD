@@ -42,6 +42,8 @@ dependencies:
   pretty_qr_code: ^3.3.0
   mobile_scanner: ^6.0.2
   flutter_svg: ^2.0.14
+  firebase_storage: ^12.3.6
+  intl: ^0.17.0
 
 dev_dependencies:
   flutter_test:
