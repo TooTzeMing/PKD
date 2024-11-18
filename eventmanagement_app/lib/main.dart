@@ -1,8 +1,10 @@
+import 'package:eventmanagement_app/screen/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'screen/loginscreen.dart';
 import 'screen/signupscreen.dart';
+import 'screen/generateCode.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,10 +20,11 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const LoginScreen(), // Set LoginScreen as the home screen
+      home:  HomeScreen(), // Set LoginScreen as the home screen
       routes: {
         '/signup': (context) => const SignupScreen(),
         '/login': (context) => const LoginScreen(),
+        '/generate': (context) => const Generatecode(),
       },
       debugShowCheckedModeBanner: false, // Hide the debug banner (optional)
     );
