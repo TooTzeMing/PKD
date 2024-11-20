@@ -1,8 +1,18 @@
 import 'package:eventmanagement_app/screen/signupscreen.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_services.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+
+   @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +34,7 @@ class LoginScreen extends StatelessWidget {
 
               // Email TextField
               TextField(
+                controller: _emailController,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.email_outlined),
                   hintText: 'Email',
@@ -38,6 +49,7 @@ class LoginScreen extends StatelessWidget {
 
               // Password TextField
               TextField(
+                controller: _passwordController,
                 obscureText: true,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.lock_outline),
@@ -62,7 +74,12 @@ class LoginScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {},
+                   onPressed: () async {
+                    await AuthService().signin(
+                        email: _emailController.text,
+                        password: _passwordController.text,
+                        context: context);
+                  },
                   child: const Text(
                     'Login',
                     style: TextStyle(

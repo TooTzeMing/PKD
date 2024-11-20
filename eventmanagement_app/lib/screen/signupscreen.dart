@@ -11,8 +11,7 @@ class SignupScreen extends StatefulWidget {
 class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController =TextEditingController();
 
   @override
   void dispose() {
@@ -118,7 +117,6 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       onPressed: () async {
-                        debugPrint("kek");
                         if (_passwordController.text !=
                             _confirmPasswordController.text) {
                           ScaffoldMessenger.of(context).showSnackBar(

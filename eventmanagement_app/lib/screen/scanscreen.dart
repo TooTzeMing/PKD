@@ -33,7 +33,7 @@ class _ScanScreenState extends State<ScanScreen> {
           IconButton(
             onPressed: () {
               Navigator.popAndPushNamed(context, "/generate");
-            }, 
+            },
             icon: Icon(
               Icons.qr_code,
             ),
