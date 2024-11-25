@@ -45,6 +45,7 @@ dependencies:
   fluttertoast: ^8.2.5
   firebase_storage: ^12.3.6
   intl: ^0.17.0
+  circle_nav_bar: ^2.1.1
 
 dev_dependencies:
   flutter_test:
