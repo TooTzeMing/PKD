@@ -1,3 +1,4 @@
+import 'package:eventmanagement_app/screen/addevent.dart';
 import 'package:eventmanagement_app/screen/eventscreen.dart';
 import 'package:eventmanagement_app/screen/loginscreen.dart';
 import 'package:eventmanagement_app/screen/scanscreen.dart';
@@ -21,45 +22,12 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
 
-  Future<void> _onItemTapped(int index) async {
-    setState(() {
-      selectedIndex = index;
-    });
-
-  if (index==1){
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) => const EventScreen(),
-      ));
-    }
-  
-  if (index == 2) {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const ScanScreen()),
-  );
-
-  if (result != null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Scanned: $result")),
-    );
-
-    // Handle the scanned QR data, e.g., mark attendance
-  }
-}
-
-
-  if (index==3){
-      Navigator.push(context, MaterialPageRoute(
-        builder: (context) => const LoginScreen(),
-      ));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _appBar(),
-      body: Column(
+    final ThemeData theme = Theme.of(context);
+
+    final List<Widget> pages = <Widget>[
+      Column(
         children: [
           carousel.CarouselSlider(  // Note the usage of the 'carousel' prefix
             options: carousel.CarouselOptions(  // Note the usage of the 'carousel' prefix
@@ -76,50 +44,110 @@ class HomeScreenState extends State<HomeScreen> {
           // Additional content goes here
         ],
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(),
+      const EventScreen(),
+      const ScanScreen(),
+    ];
+
+    return Scaffold(
+      appBar: _getAppBar(),
+      bottomNavigationBar: NavigationBar(
+        onDestinationSelected: (int index) {
+          setState(() {
+            selectedIndex = index;
+          });
+        },
+        indicatorColor: Colors.amber,
+        selectedIndex: selectedIndex,
+        destinations: const <Widget>[
+          NavigationDestination(
+            selectedIcon: Icon(Icons.home),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Badge(child: Icon(Icons.event_available_outlined)),
+            label: 'Notifications',
+          ),
+          NavigationDestination(
+            icon: Badge(
+              label: Text('2'),
+              child: Icon(Icons.scanner_sharp),
+            ),
+            label: 'Messages',
+          ),
+        ],
+      ), body: pages[selectedIndex],
+
+
+      
     );
+
+    
+  }
+  AppBar _getAppBar() {
+    switch (selectedIndex) {
+      case 1: // EventScreen
+        return AppBar(
+        title: const Text('Events',
+        style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.yellow,
+        actions: <Widget>[
+          PopupMenuButton<String>(
+            onSelected: handleMenuSelection,
+            itemBuilder: (BuildContext context) {
+              return {'Add event'}.map((String choice) {
+                return PopupMenuItem<String>(
+                  value: choice,
+                  child: Text(choice),
+                );
+              }).toList();
+            },
+            icon: const Icon(Icons.menu),
+          ),
+        ],
+      );
+      case 2: // ScanScreen
+        return AppBar(
+          title: const Text(
+            "Scan QR Code",
+            style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+          centerTitle: true,
+          backgroundColor: Colors.yellow,
+          actions: [
+            IconButton(
+              onPressed: () {
+                Navigator.popAndPushNamed(context, "/generate");
+              },
+              icon: Icon(Icons.qr_code),
+            ),
+          ],
+        );
+      default: // HomeScreen
+        return AppBar(
+          title: const Text(
+            'Welcome to PKD App',
+            style: TextStyle(color: Colors.black, fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          centerTitle: true,
+          backgroundColor: Colors.yellow,
+          elevation: 0.0,
+        );
+  
+  
   }
 
-  AppBar _appBar() {
-    return AppBar(
-      title: const Text(
-        'Welcome to PKD App',
-        style: TextStyle(
-          color: Colors.black,
-          fontSize: 18,
-          fontWeight: FontWeight.bold
-        )
-      ),
-      centerTitle: true,
-      backgroundColor: Colors.yellow,
-      elevation: 0.0,
-    );
+}void handleMenuSelection(String value) {
+    if (value == 'Add event') {
+      Navigator.push(context, MaterialPageRoute(
+        builder: (context) => const AddEventScreen(),
+      ));
+    }
   }
 
-  BottomNavigationBar _buildBottomNavigationBar() {
-    return BottomNavigationBar(
-      items: const <BottomNavigationBarItem>[
-        BottomNavigationBarItem(
-          icon: Icon(Icons.home),
-          label: 'Home',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.event),
-          label: 'Events',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.camera),
-          label: 'Scan',
-        ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.account_circle),
-          label: 'Account',
-        ),
-      ],
-      currentIndex: selectedIndex,
-      selectedItemColor: Colors.amber[800],
-      onTap: _onItemTapped,
-      type: BottomNavigationBarType.fixed,
-    );
-  }
 }
+  
+
+  

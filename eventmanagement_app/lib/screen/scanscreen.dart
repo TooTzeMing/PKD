@@ -27,19 +27,6 @@ class _ScanScreenState extends State<ScanScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Scan QR Code"),
-        actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.popAndPushNamed(context, "/generate");
-            },
-            icon: Icon(
-              Icons.qr_code,
-            ),
-          ),
-        ],
-      ),
       body: MobileScanner(
         onDetect: (barcodeCapture) {
           // `barcodeCapture` contains the list of barcodes detected

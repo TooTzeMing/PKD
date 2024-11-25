@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: LoginScreen(), // Set LoginScreen as the home screen
+      home: HomeScreen(), // Set LoginScreen as the home screen
       routes: {
         '/signup': (context) => const SignupScreen(),
         '/login': (context) => const LoginScreen(),
