@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/editevent.dart';
-
+import 'package:pretty_qr_code/pretty_qr_code.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
@@ -21,17 +21,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   void fetchEvent() async {
-    eventDocument = await FirebaseFirestore.instance.collection('events').doc(widget.eventId).get();
+    eventDocument = await FirebaseFirestore.instance
+        .collection('events')
+        .doc(widget.eventId)
+        .get();
     setState(() {});
   }
 
   void deleteEvent() async {
-    await FirebaseFirestore.instance.collection('events').doc(widget.eventId).delete();
+    await FirebaseFirestore.instance
+        .collection('events')
+        .doc(widget.eventId)
+        .delete();
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    String qrData = widget.eventId;
+
     if (eventDocument == null) {
       return Scaffold(
         appBar: AppBar(title: Text("Loading...")),
@@ -46,18 +54,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         title: Text(event['name'] ?? 'Event Details'),
         actions: [
           IconButton(
-      icon: Icon(Icons.edit),
-     onPressed: () {
-      Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => EditEventScreen(eventDocument: eventDocument),
-      ),
-    );
-  },
-),
-
-IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EditEventScreen(eventDocument: eventDocument),
+                ),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.delete),
             onPressed: () => deleteEvent(),
           )
@@ -68,8 +76,14 @@ IconButton(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Description: ${event['description'] ?? 'No description provided'}', style: TextStyle(fontSize: 16, height: 1.5)),
-            Text('Maximum Participants: ${event['maxParticipants'].toString()}', style: TextStyle(fontSize: 16, height: 1.5)),
+            SizedBox(height: 30),
+            if(qrData != null) PrettyQrView.data(data: qrData),
+
+            Text(
+                'Description: ${event['description'] ?? 'No description provided'}',
+                style: TextStyle(fontSize: 16, height: 1.5)),
+            Text('Maximum Participants: ${event['maxParticipants'].toString()}',
+                style: TextStyle(fontSize: 16, height: 1.5)),
             // Add more fields as necessary
           ],
         ),

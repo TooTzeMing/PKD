@@ -13,89 +13,98 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _maxParticipantsController = TextEditingController();
+  final TextEditingController _maxParticipantsController =
+      TextEditingController();
 
   void _handleSubmit() async {
-  // Check if any field is empty
-  if (_nameController.text.isEmpty ||
-      _dateController.text.isEmpty ||
-      _venueController.text.isEmpty ||
-      _descriptionController.text.isEmpty ||
-      _maxParticipantsController.text.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Please fill in all fields'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
+    // Check if any field is empty
+    if (_nameController.text.isEmpty ||
+        _dateController.text.isEmpty ||
+        _venueController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
+        _maxParticipantsController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Please fill in all fields'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Attempt to parse date from input
+    Timestamp eventDate;
+    try {
+      DateTime parsedDate = DateTime.parse(_dateController.text);
+      eventDate = Timestamp.fromDate(parsedDate);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid date format. Please use YYYYMMDD.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Attempt to parse maximum participants
+    int maxParticipants;
+    try {
+      maxParticipants = int.parse(_maxParticipantsController.text);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Invalid number for maximum participants.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    Map<String, dynamic> eventData = {
+      'name': _nameController.text,
+      'date': eventDate,
+      'venue': _venueController.text,
+      'description': _descriptionController.text,
+      'maxParticipants': maxParticipants,
+    };
+
+    try {
+      DocumentReference eventRef =
+          await FirebaseFirestore.instance.collection('events').add(eventData);
+
+      String eventId = eventRef.id;
+
+      await eventRef.update({'id': eventId});
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Success'),
+          content: Text('Event successfully added!'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context)
+                    .pop(); // Optionally close the AddEventScreen after success
+              },
+              child: Text('OK'),
+            ),
+          ],
+        ),
+      );
+
+      
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add event: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-
-  // Attempt to parse date from input
-  Timestamp eventDate;
-  try {
-    DateTime parsedDate = DateTime.parse(_dateController.text);
-    eventDate = Timestamp.fromDate(parsedDate);
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invalid date format. Please use YYYYMMDD.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  // Attempt to parse maximum participants
-  int maxParticipants;
-  try {
-    maxParticipants = int.parse(_maxParticipantsController.text);
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invalid number for maximum participants.'),
-        backgroundColor: Colors.red,
-      ),
-    );
-    return;
-  }
-
-  Map<String, dynamic> eventData = {
-    'name': _nameController.text,
-    'date': eventDate,
-    'venue': _venueController.text,
-    'description': _descriptionController.text,
-    'maxParticipants': maxParticipants,
-  };
-
-  try {
-    await FirebaseFirestore.instance.collection('events').add(eventData);
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Success'),
-        content: Text('Event successfully added!'),
-        actions: <Widget>[
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(); // Close the dialog
-              Navigator.of(context).pop(); // Optionally close the AddEventScreen after success
-            },
-            child: Text('OK'),
-          ),
-        ],
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to add event: $e'),
-        backgroundColor: Colors.red,
-      ),
-    );
-  }
-}
-
 
   @override
   Widget build(BuildContext context) {
