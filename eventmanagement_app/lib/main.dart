@@ -1,3 +1,5 @@
+import 'package:eventmanagement_app/screen/additionaldata.dart';
+
 import 'screen/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -20,7 +22,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: HomeScreen(), // Set LoginScreen as the home screen
+      home: LoginScreen(), // Set LoginScreen as the home screen
       routes: {
         '/signup': (context) => const SignupScreen(),
         '/login': (context) => const LoginScreen(),

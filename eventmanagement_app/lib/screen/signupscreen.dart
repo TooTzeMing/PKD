@@ -1,3 +1,4 @@
+import 'package:eventmanagement_app/screen/additionaldata.dart';
 import 'package:eventmanagement_app/services/auth_services.dart';
 import 'package:flutter/material.dart';
 
@@ -9,15 +10,18 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
+  final TextEditingController _userName = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _userName.dispose();
     super.dispose();
   }
 
@@ -54,6 +58,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   ),
                   const SizedBox(height: 30),
                   TextField(
+                    controller: _userName,
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.people),
                       hintText: 'Username',
@@ -127,14 +132,36 @@ class _SignupScreenState extends State<SignupScreen> {
                         }
 
                         try {
-                          await AuthService().signUp(
-                            email: _emailController.text,
-                            password: _passwordController.text,
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Signup successful!')),
-                          );
+                          // Sign up with Firebase Auth
+                          final userCredential = await AuthService().signUp(
+                              email: _emailController.text,
+                              password: _passwordController.text,
+                              context: context);
+
+                          // Check if userCredential and user are not null
+                          if (userCredential != null &&
+                              userCredential.user != null) {
+                            final userId = userCredential.user!.uid;
+                            final username = _userName.text;
+
+                            // Navigate to the next page with the UID
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AdditionalData(
+                                    userId: userId, username: username),
+                              ),
+                            );
+                          } else {
+                            // Handle the case where userCredential or user is null
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text('Signup failed. Please try again.')),
+                            );
+                          }
                         } catch (e) {
+                          // Handle exceptions during signup
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(content: Text('Error: ${e.toString()}')),
                           );

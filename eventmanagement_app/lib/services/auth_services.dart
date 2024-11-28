@@ -10,16 +10,51 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sign Up
-Future<void> signUp({required String email, required String password}) async {
+Future<UserCredential?> signUp({
+    required String email,
+    required String password,
+    required BuildContext context,
+  }) async {
     try {
       UserCredential userCredential =
-          await _auth.createUserWithEmailAndPassword(
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
       print("User signed up: ${userCredential.user?.uid}");
+      return userCredential;
     } on FirebaseAuthException catch (e) {
-      print("Error: $e");
+      String message = 'An error occurred. Please try again.';
+      if (e.code == 'weak-password') {
+        message = 'The password provided is too weak.';
+      } else if (e.code == 'email-already-in-use') {
+        message = 'An account already exists with that email.';
+      } else if (e.code == 'invalid-email') {
+        message = 'The email address is not valid.';
+      }
+
+      Fluttertoast.showToast(
+        msg: message,
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.SNACKBAR,
+        backgroundColor: Colors.black54,
+        textColor: Colors.white,
+        fontSize: 14.0,
+      );
+
+      return null;
+    } catch (e) {
+      print("Unexpected error: $e");
+      Fluttertoast.showToast(
+        msg: 'An unexpected error occurred. Please try again later.',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.SNACKBAR,
+        backgroundColor: Colors.black54,
+        textColor: Colors.white,
+        fontSize: 14.0,
+      );
+
+      return null;
     }
   }
 
