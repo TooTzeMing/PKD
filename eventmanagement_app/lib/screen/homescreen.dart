@@ -50,7 +50,7 @@ class HomeScreenState extends State<HomeScreen> {
       ),
       const EventScreen(),
       const ScanScreen(),
-      const ProfileScreen(),
+      const ProfilePage(),
     ];
 
     return Scaffold(
