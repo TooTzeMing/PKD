@@ -146,7 +146,6 @@ class HomeScreenState extends State<HomeScreen> {
       case 3:
         return AppBar(
           title: const Text('Profile'),
-          centerTitle: true,
         );
       default:
         return AppBar(
