@@ -6,7 +6,7 @@ import 'package:eventmanagement_app/services/global.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
-  EventDetailScreen({Key? key, required this.eventId}) : super(key: key);
+  const EventDetailScreen({super.key, required this.eventId});
 
   @override
   _EventDetailScreenState createState() => _EventDetailScreenState();
@@ -41,13 +41,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Widget build(BuildContext context) {
     String qrData = widget.eventId;
 
-    if (eventDocument == null) {
-      return Scaffold(
-        appBar: AppBar(title: Text("Loading...")),
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
     Map<String, dynamic> event = eventDocument.data()! as Map<String, dynamic>;
 
     return Scaffold(
@@ -55,7 +48,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         title: Text(event['name'] ?? 'Event Details'),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit),
+            icon: const Icon(Icons.edit),
             onPressed: () {
               Navigator.push(
                 context,
@@ -67,7 +60,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             },
           ),
           IconButton(
-            icon: Icon(Icons.delete),
+            icon: const Icon(Icons.delete),
             onPressed: () => deleteEvent(),
           )
         ],
@@ -77,14 +70,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 30),
-            if(qrData != null) PrettyQrView.data(data: qrData),
+            const SizedBox(height: 30),
+            PrettyQrView.data(data: qrData),
 
             Text(
                 'Description: ${event['description'] ?? 'No description provided'}',
-                style: TextStyle(fontSize: 16, height: 1.5)),
+                style: const TextStyle(fontSize: 16, height: 1.5)),
             Text('Maximum Participants: ${event['maxParticipants'].toString()}',
-                style: TextStyle(fontSize: 16, height: 1.5)),
+                style: const TextStyle(fontSize: 16, height: 1.5)),
             // Add more fields as necessary
           ],
         ),

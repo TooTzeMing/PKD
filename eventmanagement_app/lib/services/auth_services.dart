@@ -11,7 +11,7 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sign Up
-Future<UserCredential?> signUp({
+  Future<UserCredential?> signUp({
     required String email,
     required String password,
     required BuildContext context,
@@ -59,18 +59,14 @@ Future<UserCredential?> signUp({
     }
   }
 
-// In AuthService
-
-  Future<void> signin({
-    required String email,
-    required String password,
-    required BuildContext context,
-  }) async {
+  // Sign In
+  Future<void> signin(
+      {required String email,
+      required String password,
+      required BuildContext context}) async {
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
       User? user = FirebaseAuth.instance.currentUser;
 
@@ -79,9 +75,7 @@ Future<UserCredential?> signUp({
       }
 
       await Future.delayed(const Duration(seconds: 1));
-
-      // Navigate to home screen (can be either Admin or User screen)
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.popAndPushNamed(context, "/home");
     } on FirebaseAuthException catch (e) {
       String message = '';
       if (e.code == 'invalid-email') {

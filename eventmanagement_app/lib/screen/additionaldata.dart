@@ -6,10 +6,10 @@ class AdditionalData extends StatefulWidget {
   final String username;
 
   const AdditionalData({
-    Key? key,
+    super.key,
     required this.userId,
     required this.username,
-  }) : super(key: key);
+  });
 
   @override
   State<AdditionalData> createState() => _AdditionalDataState();

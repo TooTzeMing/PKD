@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddEventScreen extends StatefulWidget {
-  const AddEventScreen({Key? key}) : super(key: key);
+  const AddEventScreen({super.key});
 
   @override
   _AddEventScreenState createState() => _AddEventScreenState();
@@ -15,6 +15,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _maxParticipantsController =
       TextEditingController();
+  final TextEditingController _budgetController = TextEditingController();
 
   void _handleSubmit() async {
     // Check if any field is empty
@@ -22,9 +23,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
         _dateController.text.isEmpty ||
         _venueController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
-        _maxParticipantsController.text.isEmpty) {
+        _maxParticipantsController.text.isEmpty ||
+        _budgetController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Please fill in all fields'),
           backgroundColor: Colors.red,
         ),
@@ -39,7 +41,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
       eventDate = Timestamp.fromDate(parsedDate);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Invalid date format. Please use YYYYMMDD.'),
           backgroundColor: Colors.red,
         ),
@@ -53,7 +55,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
       maxParticipants = int.parse(_maxParticipantsController.text);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text('Invalid number for maximum participants.'),
           backgroundColor: Colors.red,
         ),
@@ -67,6 +69,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
       'venue': _venueController.text,
       'description': _descriptionController.text,
       'maxParticipants': maxParticipants,
+      'budget': _budgetController.text,
     };
 
     try {
@@ -80,8 +83,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Success'),
-          content: Text('Event successfully added!'),
+          title: const Text('Success'),
+          content: const Text('Event successfully added!'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
@@ -89,13 +92,11 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 Navigator.of(context)
                     .pop(); // Optionally close the AddEventScreen after success
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         ),
       );
-
-      
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -110,63 +111,71 @@ class _AddEventScreenState extends State<AddEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Event'),
+        title: const Text('Add Event'),
         leading: IconButton(
-          icon: Icon(Icons.close),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Event Name',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _dateController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Event Date',
                 hintText: 'e.g., YYYY-MM-DD',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.datetime,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _venueController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Venue',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _descriptionController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Description',
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _maxParticipantsController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Maximum Participants',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
             ),
-            SizedBox(height: 30),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _budgetController,
+              decoration: const InputDecoration(
+                labelText: 'Budget',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _handleSubmit,
-              child: Text('Submit'),
+              child: const Text('Submit'),
             ),
           ],
         ),
@@ -181,6 +190,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
     _venueController.dispose();
     _descriptionController.dispose();
     _maxParticipantsController.dispose();
+    _budgetController.dispose();
     super.dispose();
   }
 }

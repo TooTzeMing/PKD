@@ -1,12 +1,10 @@
-import 'package:eventmanagement_app/screen/signupscreen.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_services.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
-
-   @override
+  @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
@@ -74,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                   onPressed: () async {
+                  onPressed: () async {
                     await AuthService().signin(
                         email: _emailController.text,
                         password: _passwordController.text,

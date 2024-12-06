@@ -5,7 +5,7 @@ import 'package:eventmanagement_app/screen/eventdetail.dart';
 import 'package:eventmanagement_app/screen/homescreen.dart';
 import 'package:eventmanagement_app/screen/loginscreen.dart';
 import 'package:intl/intl.dart'; 
-
+import 'package:eventmanagement_app/services/global.dart';
 
 
 

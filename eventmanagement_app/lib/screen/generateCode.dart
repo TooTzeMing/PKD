@@ -10,9 +10,9 @@ class Generatecode extends StatefulWidget {
 class _GeneratecodeState extends State<Generatecode> {
   @override
   Widget build(BuildContext context) {
-    return  Scaffold(
+    return Scaffold(
       appBar: AppBar(
-        title: Text('Generate Code'),
+        title: const Text('Generate Code'),
       ),
     );
   }
