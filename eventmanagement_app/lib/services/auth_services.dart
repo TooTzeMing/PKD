@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:eventmanagement_app/main.dart';
+import 'package:eventmanagement_app/services/global.dart';
 
 
 class AuthService {
@@ -58,31 +59,37 @@ Future<UserCredential?> signUp({
     }
   }
 
-  // Sign In
- Future<void> signin({
+// In AuthService
+
+  Future<void> signin({
     required String email,
     required String password,
-    required BuildContext context
+    required BuildContext context,
   }) async {
-    
     try {
-
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
-        password: password
+        password: password,
       );
 
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        await _getUserRole(user); // Store the user role globally
+      }
+
       await Future.delayed(const Duration(seconds: 1));
-      Navigator.popAndPushNamed(context, "/home");
-      
-    } on FirebaseAuthException catch(e) {
+
+      // Navigate to home screen (can be either Admin or User screen)
+      Navigator.pushReplacementNamed(context, '/home');
+    } on FirebaseAuthException catch (e) {
       String message = '';
       if (e.code == 'invalid-email') {
         message = 'No user found for that email.';
       } else if (e.code == 'invalid-credential') {
         message = 'Wrong password provided for that user.';
       }
-       Fluttertoast.showToast(
+      Fluttertoast.showToast(
         msg: message,
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.SNACKBAR,
@@ -92,6 +99,30 @@ Future<UserCredential?> signUp({
       );
     }
   }
+
+
+  Future<void> _getUserRole(User user) async {
+    try {
+      // Fetch the role from the Firestore database
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      final int? numericRole = doc.data()?['role'];
+
+      // Store the role globally
+      if (numericRole == 1) {
+        userRole = 'admin'; // Set role to admin
+      } else if (numericRole == 2) {
+        userRole = 'user'; // Set role to user
+      } else {
+        userRole = null; // If no valid role is found
+      }
+    } catch (e) {
+      print("Error fetching user role: $e");
+    }
+  }
+
 
   // Sign Out
   Future<void> signOut() async {

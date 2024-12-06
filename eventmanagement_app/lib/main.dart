@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/additionaldata.dart';
 
 import 'screen/homescreen.dart';
@@ -7,6 +8,8 @@ import 'firebase_options.dart';
 import 'screen/loginscreen.dart';
 import 'screen/signupscreen.dart';
 import 'screen/generateCode.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

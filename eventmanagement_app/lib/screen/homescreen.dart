@@ -8,9 +8,10 @@ import 'package:eventmanagement_app/screen/profilescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart' as carousel;
+import 'package:eventmanagement_app/services/global.dart';
+
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({Key? key}) : super(key: key);
 
   final List<String> imgList = [
     'https://www.rurallink.gov.my/wp-content/uploads/2021/05/BILANGAN-PKD-02-scaled.jpg',
@@ -106,20 +107,22 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           centerTitle: true,
           backgroundColor: Colors.yellow,
-          actions: <Widget>[
-            PopupMenuButton<String>(
-              onSelected: handleMenuSelection,
-              itemBuilder: (BuildContext context) {
-                return {'Add event'}.map((String choice) {
-                  return PopupMenuItem<String>(
-                    value: choice,
-                    child: Text(choice),
-                  );
-                }).toList();
-              },
-              icon: const Icon(Icons.menu),
-            ),
-          ],
+          actions: userRole == 'admin' // Check if user role is 'admin'
+              ? <Widget>[
+                  PopupMenuButton<String>(
+                    onSelected: handleMenuSelection,
+                    itemBuilder: (BuildContext context) {
+                      return {'Add event'}.map((String choice) {
+                        return PopupMenuItem<String>(
+                          value: choice,
+                          child: Text(choice),
+                        );
+                      }).toList();
+                    },
+                    icon: const Icon(Icons.menu),
+                  ),
+                ]
+              : null, // No actions for non-admin users
         );
       case 2:
         return AppBar(
@@ -145,7 +148,6 @@ class HomeScreenState extends State<HomeScreen> {
       case 3: 
       return AppBar(
         title: const Text('Profile'),
-        centerTitle: true,
       );
       default:
         return AppBar(

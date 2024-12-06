@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/editevent.dart';
 import 'package:pretty_qr_code/pretty_qr_code.dart';
+import 'package:eventmanagement_app/services/global.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;

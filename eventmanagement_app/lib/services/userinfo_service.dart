@@ -16,7 +16,6 @@ class DatabaseService {
     required String state,
     required String householdCategory,
     required String ageLevel,
-    required String serviceType,
   }) async {
     try {
       await _firestore.collection("users").doc(userId).set({
@@ -30,7 +29,7 @@ class DatabaseService {
         "state": state,
         "household_category": householdCategory,
         "age_level": ageLevel,
-        "service_type": serviceType,
+        "role": 1,
       });
       print("User data added successfully for userId: $userId");
     } catch (e) {

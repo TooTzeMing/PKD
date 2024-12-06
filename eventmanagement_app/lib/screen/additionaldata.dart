@@ -27,7 +27,6 @@ class _AdditionalDataState extends State<AdditionalData> {
   final _stateController = TextEditingController();
   final _householdCategoryController = TextEditingController();
   final _ageLevelController = TextEditingController();
-  final _serviceTypeController = TextEditingController();
 
   @override
   void dispose() {
@@ -40,7 +39,6 @@ class _AdditionalDataState extends State<AdditionalData> {
     _stateController.dispose();
     _householdCategoryController.dispose();
     _ageLevelController.dispose();
-    _serviceTypeController.dispose();
     super.dispose();
   }
 
@@ -243,18 +241,6 @@ class _AdditionalDataState extends State<AdditionalData> {
                   });
                 },
               ),
-              _buildDropdownSelector(
-                label: "Service Type",
-                hint: "Please select your service type.",
-                icon: Icons.build,
-                items: ["Plumbing", "Electrician", "Carpentry", "Cleaning"],
-                selectedValue: _selectedServiceType,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedServiceType = value;
-                  });
-                },
-              ),
               const SizedBox(height: 30),
               Center(
                 child: ElevatedButton.icon(
@@ -266,7 +252,7 @@ class _AdditionalDataState extends State<AdditionalData> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                onPressed: () async {
+                  onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
                       try {
                         // Save data to Firebase
@@ -282,7 +268,6 @@ class _AdditionalDataState extends State<AdditionalData> {
                           state: _selectedState ?? "",
                           householdCategory: _selectedHouseholdCategory ?? "",
                           ageLevel: _selectedAgeLevel ?? "",
-                          serviceType: _selectedServiceType ?? "",
                         );
 
                         ScaffoldMessenger.of(context).showSnackBar(

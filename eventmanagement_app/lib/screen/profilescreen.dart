@@ -19,14 +19,26 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _postcodeController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
-  final TextEditingController _householdCategoryController = TextEditingController();
+  final TextEditingController _householdCategoryController =
+      TextEditingController();
   final TextEditingController _ageLevelController = TextEditingController();
-  final TextEditingController _serviceTypeController = TextEditingController();
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? currentUser = FirebaseAuth.instance.currentUser;
+  String? _activeField; // Tracks the currently active (editable) field
 
-  bool _isEditing = false; // Controls edit mode
+  // Dropdown options
+  final List<String> _genders = ['Male', 'Female', 'Other'];
+  final List<String> _states = [
+    'California',
+    'Texas',
+    'New York'
+  ]; // Example states
+  final List<String> _householdCategories = ['Single', 'Couple', 'Family'];
+  final List<String> _ageLevels = ['Child', 'Teen', 'Adult', 'Senior'];
+
+  Map<String, bool> _editingFields =
+      {}; // Map to track edit state for each field
 
   @override
   void initState() {
@@ -36,7 +48,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _fetchUserData() async {
     if (currentUser != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(currentUser!.uid).get();
       if (userDoc.exists) {
         setState(() {
           _usernameController.text = userDoc['username'] ?? '';
@@ -47,9 +60,9 @@ class _ProfilePageState extends State<ProfilePage> {
           _genderController.text = userDoc['gender'] ?? '';
           _postcodeController.text = userDoc['postcode'] ?? '';
           _stateController.text = userDoc['state'] ?? '';
-          _householdCategoryController.text = userDoc['household_category'] ?? '';
+          _householdCategoryController.text =
+              userDoc['household_category'] ?? '';
           _ageLevelController.text = userDoc['age_level'] ?? '';
-          _serviceTypeController.text = userDoc['service_type'] ?? '';
         });
       } else {
         print('User document not found');
@@ -59,99 +72,172 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _updateUserData() async {
+  Future<void> _saveField(
+      String field, TextEditingController controller) async {
     try {
       await _firestore.collection('users').doc(currentUser!.uid).update({
-        'username': _usernameController.text,
-        'name': _nameController.text,
-        'ic': _icController.text,
-        'address': _addressController.text,
-        'no_tel': _noTelController.text,
-        'gender': _genderController.text,
-        'postcode': _postcodeController.text,
-        'state': _stateController.text,
-        'household_category': _householdCategoryController.text,
-        'age_level': _ageLevelController.text,
-        'service_type': _serviceTypeController.text,
+        field: controller.text,
       });
       Fluttertoast.showToast(
-        msg: 'Profile updated successfully',
+        msg: 'Field updated successfully',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.green,
         textColor: Colors.white,
       );
-
-      setState(() {
-        _isEditing = false; // Switch back to non-editable mode
-      });
     } catch (e) {
       Fluttertoast.showToast(
-        msg: 'Failed to update profile: $e',
+        msg: 'Failed to update field: $e',
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.BOTTOM,
         backgroundColor: Colors.red,
         textColor: Colors.white,
       );
+    } finally {
+      setState(() {
+        _activeField = null; // Disable edit mode for the field
+      });
     }
+  }
+
+  Widget _buildStylizedField(String label, String fieldKey,
+      TextEditingController controller, List<String>? dropdownItems) {
+    bool isEditing = _activeField == fieldKey;
+
+    String selectedValue =
+        controller.text; // Store selected value for dropdowns
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 15.0),
+      child: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              color: isEditing ? Colors.lightBlue[50] : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 2,
+                  blurRadius: 5,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+              border:
+                  isEditing ? Border.all(color: Colors.blue, width: 2) : null,
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(vertical: 10.0, horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Label
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isEditing ? Colors.blue : Colors.grey,
+                    ),
+                  ),
+                  // Field Content
+                  dropdownItems == null || !isEditing
+                      ? TextField(
+                          controller: controller,
+                          readOnly: !isEditing,
+                          style: const TextStyle(fontSize: 18),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                          ),
+                        )
+                      : DropdownButton<String>(
+                          value: selectedValue.isEmpty
+                              ? dropdownItems[0]
+                              : selectedValue,
+                          isExpanded: true,
+                          items: dropdownItems.map((item) {
+                            return DropdownMenuItem(
+                              value: item,
+                              child: Text(item,
+                                  style: const TextStyle(fontSize: 18)),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              selectedValue = newValue!;
+                              controller.text = newValue;
+                            });
+                          },
+                          underline: const SizedBox(), // Remove underline
+                        ),
+                ],
+              ),
+            ),
+          ),
+          // Edit/Save Icon
+          Positioned(
+            top: 10,
+            right: 10,
+            child: GestureDetector(
+              onTap: () {
+                if (isEditing) {
+                  _saveField(fieldKey, controller); // Save changes
+                  setState(() {
+                    _activeField = null; // Exit edit mode
+                  });
+                } else {
+                  setState(() {
+                    _activeField = fieldKey; // Enable edit mode for this field
+                  });
+                }
+              },
+              child: Icon(
+                isEditing ? Icons.check : Icons.edit,
+                color: Colors.grey,
+                size: 20,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Column(
             children: [
-              _buildTextField(_usernameController, 'Username', Icons.person, !_isEditing),
-              _buildTextField(_nameController, 'Name', Icons.text_fields, !_isEditing),
-              _buildTextField(_icController, 'IC', Icons.credit_card, !_isEditing),
-              _buildTextField(_addressController, 'Address', Icons.home, !_isEditing),
-              _buildTextField(_noTelController, 'Phone Number', Icons.phone, !_isEditing),
-              _buildTextField(_genderController, 'Gender', Icons.wc, !_isEditing),
-              _buildTextField(_postcodeController, 'Postcode', Icons.location_on, !_isEditing),
-              _buildTextField(_stateController, 'State', Icons.map, !_isEditing),
-              _buildTextField(_householdCategoryController, 'Household Category', Icons.category, !_isEditing),
-              _buildTextField(_ageLevelController, 'Age Level', Icons.cake, !_isEditing),
-              _buildTextField(_serviceTypeController, 'Service Type', Icons.miscellaneous_services, !_isEditing),
-              const SizedBox(height: 20),
-              _isEditing
-                  ? ElevatedButton(
-                      onPressed: _updateUserData,
-                      child: const Text('Save Changes'),
-                    )
-                  : ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _isEditing = true;
-                        });
-                      },
-                      child: const Text('Edit Profile'),
-                    ),
+              Column(
+                children: [
+                  _buildStylizedField(
+                      'Username', 'username', _usernameController, null),
+                  _buildStylizedField('Name', 'name', _nameController, null),
+                  _buildStylizedField('IC', 'ic', _icController, null),
+                  _buildStylizedField(
+                      'Address', 'address', _addressController, null),
+                  _buildStylizedField(
+                      'Post Code', 'postcode', _postcodeController, null),
+                  _buildStylizedField(
+                      'Gender', 'gender', _genderController, _genders),
+                  _buildStylizedField(
+                      'State', 'state', _stateController, _states),
+                  _buildStylizedField(
+                      'Household Category',
+                      'household_category',
+                      _householdCategoryController,
+                      _householdCategories),
+                  _buildStylizedField('Age Level', 'age_level',
+                      _ageLevelController, _ageLevels),
+                ],
+              ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, bool readOnly) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10.0),
-      child: TextField(
-        controller: controller,
-        readOnly: readOnly,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon),
-          filled: true,
-          fillColor: readOnly ? Colors.grey.shade200 : Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
