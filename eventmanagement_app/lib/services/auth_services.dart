@@ -2,15 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:eventmanagement_app/main.dart';
-
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sign Up
-Future<UserCredential?> signUp({
+  Future<UserCredential?> signUp({
     required String email,
     required String password,
     required BuildContext context,
@@ -59,30 +57,24 @@ Future<UserCredential?> signUp({
   }
 
   // Sign In
- Future<void> signin({
-    required String email,
-    required String password,
-    required BuildContext context
-  }) async {
-    
+  Future<void> signin(
+      {required String email,
+      required String password,
+      required BuildContext context}) async {
     try {
-
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password
-      );
+      await FirebaseAuth.instance
+          .signInWithEmailAndPassword(email: email, password: password);
 
       await Future.delayed(const Duration(seconds: 1));
       Navigator.popAndPushNamed(context, "/home");
-      
-    } on FirebaseAuthException catch(e) {
+    } on FirebaseAuthException catch (e) {
       String message = '';
       if (e.code == 'invalid-email') {
         message = 'No user found for that email.';
       } else if (e.code == 'invalid-credential') {
         message = 'Wrong password provided for that user.';
       }
-       Fluttertoast.showToast(
+      Fluttertoast.showToast(
         msg: message,
         toastLength: Toast.LENGTH_LONG,
         gravity: ToastGravity.SNACKBAR,

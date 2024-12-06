@@ -1,16 +1,13 @@
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:eventmanagement_app/screen/addevent.dart';
-import 'package:eventmanagement_app/screen/addfeedback.dart';
 import 'package:eventmanagement_app/screen/eventscreen.dart';
-import 'package:eventmanagement_app/screen/loginscreen.dart';
 import 'package:eventmanagement_app/screen/scanscreen.dart';
 import 'package:eventmanagement_app/screen/profilescreen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:carousel_slider/carousel_slider.dart' as carousel;
 
 class HomeScreen extends StatefulWidget {
-  HomeScreen({Key? key}) : super(key: key);
+  HomeScreen({super.key});
 
   final List<String> imgList = [
     'https://www.rurallink.gov.my/wp-content/uploads/2021/05/BILANGAN-PKD-02-scaled.jpg',
@@ -36,15 +33,17 @@ class HomeScreenState extends State<HomeScreen> {
               aspectRatio: 2.0,
               enlargeCenterPage: true,
             ),
-            items: widget.imgList.map((item) => Container(
-              child: Center(
-                child: Image.network(
-                  item,
-                  fit: BoxFit.cover,
-                  width: MediaQuery.of(context).size.width,
-                ),
-              ),
-            )).toList(),
+            items: widget.imgList
+                .map((item) => Container(
+                      child: Center(
+                        child: Image.network(
+                          item,
+                          fit: BoxFit.cover,
+                          width: MediaQuery.of(context).size.width,
+                        ),
+                      ),
+                    ))
+                .toList(),
           ),
         ],
       ),
@@ -62,7 +61,6 @@ class HomeScreenState extends State<HomeScreen> {
           Icon(Icons.event, color: Colors.deepPurple),
           Icon(Icons.qr_code_scanner, color: Colors.deepPurple),
           Icon(Icons.people, color: Colors.deepPurple),
-
         ],
         inactiveIcons: const [
           Text("Home"),
@@ -142,11 +140,11 @@ class HomeScreenState extends State<HomeScreen> {
             ),
           ],
         );
-      case 3: 
-      return AppBar(
-        title: const Text('Profile'),
-        centerTitle: true,
-      );
+      case 3:
+        return AppBar(
+          title: const Text('Profile'),
+          centerTitle: true,
+        );
       default:
         return AppBar(
           title: const Text(

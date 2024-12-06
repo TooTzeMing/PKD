@@ -6,10 +6,10 @@ class AdditionalData extends StatefulWidget {
   final String username;
 
   const AdditionalData({
-    Key? key,
+    super.key,
     required this.userId,
     required this.username,
-  }) : super(key: key);
+  });
 
   @override
   State<AdditionalData> createState() => _AdditionalDataState();
@@ -266,7 +266,7 @@ class _AdditionalDataState extends State<AdditionalData> {
                       borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
-                onPressed: () async {
+                  onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
                       try {
                         // Save data to Firebase

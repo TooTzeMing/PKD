@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  const ProfilePage({super.key});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -19,7 +19,8 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _genderController = TextEditingController();
   final TextEditingController _postcodeController = TextEditingController();
   final TextEditingController _stateController = TextEditingController();
-  final TextEditingController _householdCategoryController = TextEditingController();
+  final TextEditingController _householdCategoryController =
+      TextEditingController();
   final TextEditingController _ageLevelController = TextEditingController();
   final TextEditingController _serviceTypeController = TextEditingController();
 
@@ -36,7 +37,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _fetchUserData() async {
     if (currentUser != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('users').doc(currentUser!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('users').doc(currentUser!.uid).get();
       if (userDoc.exists) {
         setState(() {
           _usernameController.text = userDoc['username'] ?? '';
@@ -47,7 +49,8 @@ class _ProfilePageState extends State<ProfilePage> {
           _genderController.text = userDoc['gender'] ?? '';
           _postcodeController.text = userDoc['postcode'] ?? '';
           _stateController.text = userDoc['state'] ?? '';
-          _householdCategoryController.text = userDoc['household_category'] ?? '';
+          _householdCategoryController.text =
+              userDoc['household_category'] ?? '';
           _ageLevelController.text = userDoc['age_level'] ?? '';
           _serviceTypeController.text = userDoc['service_type'] ?? '';
         });
@@ -107,17 +110,28 @@ class _ProfilePageState extends State<ProfilePage> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              _buildTextField(_usernameController, 'Username', Icons.person, !_isEditing),
-              _buildTextField(_nameController, 'Name', Icons.text_fields, !_isEditing),
-              _buildTextField(_icController, 'IC', Icons.credit_card, !_isEditing),
-              _buildTextField(_addressController, 'Address', Icons.home, !_isEditing),
-              _buildTextField(_noTelController, 'Phone Number', Icons.phone, !_isEditing),
-              _buildTextField(_genderController, 'Gender', Icons.wc, !_isEditing),
-              _buildTextField(_postcodeController, 'Postcode', Icons.location_on, !_isEditing),
-              _buildTextField(_stateController, 'State', Icons.map, !_isEditing),
-              _buildTextField(_householdCategoryController, 'Household Category', Icons.category, !_isEditing),
-              _buildTextField(_ageLevelController, 'Age Level', Icons.cake, !_isEditing),
-              _buildTextField(_serviceTypeController, 'Service Type', Icons.miscellaneous_services, !_isEditing),
+              _buildTextField(
+                  _usernameController, 'Username', Icons.person, !_isEditing),
+              _buildTextField(
+                  _nameController, 'Name', Icons.text_fields, !_isEditing),
+              _buildTextField(
+                  _icController, 'IC', Icons.credit_card, !_isEditing),
+              _buildTextField(
+                  _addressController, 'Address', Icons.home, !_isEditing),
+              _buildTextField(
+                  _noTelController, 'Phone Number', Icons.phone, !_isEditing),
+              _buildTextField(
+                  _genderController, 'Gender', Icons.wc, !_isEditing),
+              _buildTextField(_postcodeController, 'Postcode',
+                  Icons.location_on, !_isEditing),
+              _buildTextField(
+                  _stateController, 'State', Icons.map, !_isEditing),
+              _buildTextField(_householdCategoryController,
+                  'Household Category', Icons.category, !_isEditing),
+              _buildTextField(
+                  _ageLevelController, 'Age Level', Icons.cake, !_isEditing),
+              _buildTextField(_serviceTypeController, 'Service Type',
+                  Icons.miscellaneous_services, !_isEditing),
               const SizedBox(height: 20),
               _isEditing
                   ? ElevatedButton(
@@ -139,7 +153,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, bool readOnly) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      IconData icon, bool readOnly) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10.0),
       child: TextField(

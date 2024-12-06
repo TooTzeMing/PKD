@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class AddFeedbackPage extends StatefulWidget {
+  const AddFeedbackPage({super.key});
+
   @override
   _AddFeedbackPageState createState() => _AddFeedbackPageState();
 }
@@ -21,7 +23,7 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
   void _submitFeedback() {
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Feedback submitted successfully!')),
+        const SnackBar(content: Text('Feedback submitted successfully!')),
       );
       _formKey.currentState!.reset();
     }
@@ -31,7 +33,7 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Feedback'),
+        title: const Text('Add Feedback'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -41,13 +43,13 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Name',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
                   controller: _nameController,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Enter your name',
                     border: OutlineInputBorder(),
                   ),
@@ -58,18 +60,15 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 16),
-                Text(
+                const SizedBox(height: 16),
+                const Text(
                   'Category',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 DropdownButtonFormField<String>(
                   value: _selectedCategory,
-                  items: [
-                    'Bug Report',
-                    'Feature Request',
-                    'General Feedback'
-                  ].map((category) {
+                  items: ['Bug Report', 'Feature Request', 'General Feedback']
+                      .map((category) {
                     return DropdownMenuItem(
                       value: category,
                       child: Text(category),
@@ -80,7 +79,7 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
                       _selectedCategory = value;
                     });
                   },
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) {
@@ -90,15 +89,15 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 16),
-                Text(
+                const SizedBox(height: 16),
+                const Text(
                   'Feedback',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 TextFormField(
                   controller: _feedbackController,
                   maxLines: 5,
-                  decoration: InputDecoration(
+                  decoration: const InputDecoration(
                     hintText: 'Enter your feedback',
                     border: OutlineInputBorder(),
                   ),
@@ -109,11 +108,11 @@ class _AddFeedbackPageState extends State<AddFeedbackPage> {
                     return null;
                   },
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 Center(
                   child: ElevatedButton(
                     onPressed: _submitFeedback,
-                    child: Text('Submit Feedback'),
+                    child: const Text('Submit Feedback'),
                   ),
                 ),
               ],
