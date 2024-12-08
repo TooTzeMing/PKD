@@ -5,7 +5,6 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:eventmanagement_app/main.dart';
 import 'package:eventmanagement_app/services/global.dart';
 
-
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -94,7 +93,6 @@ class AuthService {
     }
   }
 
-
   Future<void> _getUserRole(User user) async {
     try {
       // Fetch the role from the Firestore database
@@ -117,14 +115,17 @@ class AuthService {
     }
   }
 
-
   // Sign Out
-  Future<void> signOut() async {
+  Future<void> signout({required BuildContext context}) async {
     try {
-      await _auth.signOut();
-      print("User signed out");
+      await FirebaseAuth.instance.signOut();
+      Navigator.pushReplacementNamed(
+          context, '/login'); // Ensure '/login' is defined in routes
     } catch (e) {
-      print("Error: $e");
+      // Show an error message if signout fails
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error during signout: ${e.toString()}')),
+      );
     }
   }
 

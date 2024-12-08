@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/additionaldata.dart';
-
+import 'package:eventmanagement_app/screen/viewAccount.dart';
 import 'screen/homescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,6 +32,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/generate': (context) => const Generatecode(),
         '/home': (context) => HomeScreen(),
+        '/viewAccount': (context) => const ViewAccount(),
       },
       debugShowCheckedModeBanner: false, // Hide the debug banner (optional)
     );

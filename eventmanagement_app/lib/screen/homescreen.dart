@@ -6,6 +6,8 @@ import 'package:eventmanagement_app/screen/profilescreen.dart';
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart' as carousel;
 import 'package:eventmanagement_app/services/global.dart';
+import 'package:eventmanagement_app/services/auth_services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 
 class HomeScreen extends StatefulWidget {
@@ -15,6 +17,7 @@ class HomeScreen extends StatefulWidget {
     'https://www.malaysia.gov.my/media/uploads/32e3439d-5926-4a8b-9827-aec338fe445e.png',
     'https://www.rurallink.gov.my/wp-content/uploads/2020/09/FUNGSI-PUSAT-KOMUNITI-DESA-1-1024x652.png',
   ];
+  
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -144,9 +147,25 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         );
       case 3:
-        return AppBar(
-          title: const Text('Profile'),
-        );
+      return AppBar(
+          title: const Text(
+            'Profile',
+            style: TextStyle(
+              color: Colors.black,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.yellow,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.black),
+              onPressed: () {
+                _showLogoutConfirmation(context);
+              },
+            ),
+          ],
+      );
       default:
         return AppBar(
           title: const Text(
@@ -174,4 +193,32 @@ class HomeScreenState extends State<HomeScreen> {
       );
     }
   }
+
+  void _showLogoutConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout Confirmation'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+                AuthService().signout(context: context); // Call logout function
+              },
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
 }
