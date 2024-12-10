@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/editevent.dart';
+import 'package:eventmanagement_app/screen/AttendanceReportScreen.dart'; // Import the new screen
 import 'package:pretty_qr_code/pretty_qr_code.dart';
-import 'package:eventmanagement_app/services/global.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
+
   const EventDetailScreen({super.key, required this.eventId});
 
   @override
@@ -14,6 +15,7 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   late DocumentSnapshot eventDocument;
+  bool isEventFetched = false;
 
   @override
   void initState() {
@@ -26,7 +28,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         .collection('events')
         .doc(widget.eventId)
         .get();
-    setState(() {});
+
+    setState(() {
+      isEventFetched = true;
+    });
   }
 
   void deleteEvent() async {
@@ -40,6 +45,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   @override
   Widget build(BuildContext context) {
     String qrData = widget.eventId;
+
+    if (!isEventFetched) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     Map<String, dynamic> event = eventDocument.data()! as Map<String, dynamic>;
 
@@ -73,12 +84,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             const SizedBox(height: 30),
             PrettyQrView.data(data: qrData),
 
+            const SizedBox(height: 20),
+
             Text(
                 'Description: ${event['description'] ?? 'No description provided'}',
                 style: const TextStyle(fontSize: 16, height: 1.5)),
             Text('Maximum Participants: ${event['maxParticipants'].toString()}',
                 style: const TextStyle(fontSize: 16, height: 1.5)),
-            // Add more fields as necessary
+
+            const SizedBox(height: 30),
+
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AttendanceReportScreen(
+                      eventId: widget.eventId,
+                      eventName: event['name'] ?? 'Event',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('View Attendance Report'),
+            ),
           ],
         ),
       ),

@@ -14,60 +14,54 @@ class ScanScreen extends StatefulWidget {
 class _ScanScreenState extends State<ScanScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
   bool _isProcessing = false; // To prevent multiple scans
 
-  void _saveScanResult(String eventId) async {
-    setState(() {
-      _isProcessing = true;
-    });
+  // Function to handle the scan result
+  void handleScanResult(
+      BuildContext context, String scannedEventId, String userId) async {
+    final attendanceRef = FirebaseFirestore.instance.collection('attendance');
 
-    try {
-      // Get the current user's ID
-      final User? currentUser = _auth.currentUser;
-      if (currentUser == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No user is logged in')),
-        );
-        return;
-      }
+    // Check if the user has already scanned for this event
+    QuerySnapshot existingRecord = await attendanceRef
+        .where('eventId', isEqualTo: scannedEventId)
+        .where('userId', isEqualTo: userId)
+        .get();
 
-      final userId = currentUser.uid;
-
-      // Save the eventId and userId to Firestore
-      await _firestore.collection('eventParticipants').add({
-        'eventId': eventId,
+    if (existingRecord.docs.isNotEmpty) {
+      // User has already scanned for this event
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ScanSuccessScreen(
+            eventId: scannedEventId,
+            isDuplicateScan: true, // Pass the duplicate scan flag
+          ),
+        ),
+      );
+    } else {
+      // Add new record to the attendance database
+      await attendanceRef.add({
+        'eventId': scannedEventId,
         'userId': userId,
         'timestamp': FieldValue.serverTimestamp(),
       });
 
-      // Navigate to success page
-      if (mounted) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ScanSuccessScreen(eventId: eventId),
+      // Navigate to success screen
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ScanSuccessScreen(
+            eventId: scannedEventId,
+            isDuplicateScan: false, // Pass the success flag
           ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving data: $e')),
+        ),
       );
-    } finally {
-      setState(() {
-        _isProcessing = false;
-      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scan QR Code'),
-        centerTitle: true,
-      ),
       body: Stack(
         children: [
           MobileScanner(
@@ -76,11 +70,25 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
             onDetect: (capture) {
               if (!_isProcessing) {
+                setState(() {
+                  _isProcessing = true;
+                });
+
                 final List<Barcode> barcodes = capture.barcodes;
                 for (final barcode in barcodes) {
                   if (barcode.rawValue != null) {
                     final scannedEventId = barcode.rawValue!;
-                    _saveScanResult(scannedEventId);
+                    final userId = _auth.currentUser?.uid ?? '';
+
+                    // Handle the scan result
+                    handleScanResult(context, scannedEventId, userId);
+
+                    // After scanning, reset the processing flag
+                    Future.delayed(Duration(seconds: 2), () {
+                      setState(() {
+                        _isProcessing = false;
+                      });
+                    });
                     break;
                   }
                 }

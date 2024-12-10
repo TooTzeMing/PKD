@@ -9,15 +9,12 @@ import 'package:eventmanagement_app/services/global.dart';
 import 'package:eventmanagement_app/services/auth_services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-
 class HomeScreen extends StatefulWidget {
-
   final List<String> imgList = [
     'https://www.rurallink.gov.my/wp-content/uploads/2021/05/BILANGAN-PKD-02-scaled.jpg',
     'https://www.malaysia.gov.my/media/uploads/32e3439d-5926-4a8b-9827-aec338fe445e.png',
     'https://www.rurallink.gov.my/wp-content/uploads/2020/09/FUNGSI-PUSAT-KOMUNITI-DESA-1-1024x652.png',
   ];
-  
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -137,17 +134,9 @@ class HomeScreenState extends State<HomeScreen> {
           ),
           centerTitle: true,
           backgroundColor: Colors.yellow,
-          actions: [
-            IconButton(
-              onPressed: () {
-                Navigator.popAndPushNamed(context, "/generate");
-              },
-              icon: const Icon(Icons.qr_code),
-            ),
-          ],
         );
       case 3:
-      return AppBar(
+        return AppBar(
           title: const Text(
             'Profile',
             style: TextStyle(
@@ -165,7 +154,7 @@ class HomeScreenState extends State<HomeScreen> {
               },
             ),
           ],
-      );
+        );
       default:
         return AppBar(
           title: const Text(
@@ -220,5 +209,4 @@ class HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
 }
