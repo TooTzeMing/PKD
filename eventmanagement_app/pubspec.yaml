@@ -47,6 +47,8 @@ dependencies:
   intl: ^0.17.0
   circle_nav_bar: ^2.1.1
   qr_flutter: ^4.1.0
+  pdf: ^3.11.1
+  printing: ^5.13.4
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:intl/intl.dart';
 
 class AttendanceReportScreen extends StatelessWidget {
   final String eventId;
@@ -11,25 +14,73 @@ class AttendanceReportScreen extends StatelessWidget {
     required this.eventName,
   });
 
-  Future<List<String>> fetchAttendees() async {
+  Future<List<Map<String, dynamic>>> fetchAttendees() async {
     final QuerySnapshot participantSnapshot = await FirebaseFirestore.instance
-        .collection('eventParticipants')
+        .collection('attendance')
         .where('eventId', isEqualTo: eventId)
         .get();
 
-    List<String> attendeeNames = [];
+    List<Map<String, dynamic>> attendees = [];
     for (var doc in participantSnapshot.docs) {
       final userId = doc['userId'];
+      final timestamp = doc['timestamp']; // Assuming this field exists.
 
       // Fetch user details from users collection
-      final DocumentSnapshot userSnapshot =
-          await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      final DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
 
       if (userSnapshot.exists) {
-        attendeeNames.add(userSnapshot['name']);
+        attendees.add({
+          'name': userSnapshot['name'],
+          'timestamp': timestamp,
+        });
       }
     }
-    return attendeeNames;
+    return attendees;
+  }
+
+  String formatTimestamp(Timestamp timestamp) {
+    final dateTime = timestamp.toDate();
+    return DateFormat('HH:mm:ss a dd-MM-yyyy').format(dateTime);
+  }
+
+  Future<void> generateAndDownloadPdf(
+      List<Map<String, dynamic>> attendees) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text(
+                'Attendance Report for $eventName',
+                style:
+                    pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Table.fromTextArray(
+                headers: ['Name', 'Scanned Time'],
+                data: attendees.map((attendee) {
+                  return [
+                    attendee['name'],
+                    formatTimestamp(attendee['timestamp']),
+                  ];
+                }).toList(),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.sharePdf(
+      bytes: await pdf.save(),
+      filename: 'Attendance_Report.pdf',
+    );
   }
 
   @override
@@ -48,10 +99,8 @@ class AttendanceReportScreen extends StatelessWidget {
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-
-            // Fetch and display attendees
             Expanded(
-              child: FutureBuilder<List<String>>(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: fetchAttendees(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -68,15 +117,29 @@ class AttendanceReportScreen extends StatelessWidget {
                     return const Text('No attendees have checked in yet.');
                   }
 
-                  final attendeeNames = snapshot.data!;
-                  return ListView.builder(
-                    itemCount: attendeeNames.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        leading: const Icon(Icons.person),
-                        title: Text(attendeeNames[index]),
-                      );
-                    },
+                  final attendees = snapshot.data!;
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: attendees.length,
+                          itemBuilder: (context, index) {
+                            final attendee = attendees[index];
+                            final formattedTime =
+                                formatTimestamp(attendee['timestamp']);
+                            return ListTile(
+                              leading: const Icon(Icons.person),
+                              title: Text(attendee['name']),
+                              subtitle: Text('$formattedTime'),
+                            );
+                          },
+                        ),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => generateAndDownloadPdf(attendees),
+                        child: const Text('Download PDF'),
+                      ),
+                    ],
                   );
                 },
               ),

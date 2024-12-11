@@ -17,16 +17,22 @@ class ScanSuccessScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Scan Result'),
+        automaticallyImplyLeading: false,
       ),
       body: Center(
         child: FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance.collection('events').doc(eventId).get(),
+          future: FirebaseFirestore.instance
+              .collection('events')
+              .doc(eventId)
+              .get(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const CircularProgressIndicator();
             }
 
-            if (snapshot.hasError || !snapshot.hasData || !snapshot.data!.exists) {
+            if (snapshot.hasError ||
+                !snapshot.hasData ||
+                !snapshot.data!.exists) {
               return const Text('Error fetching event details.');
             }
 
@@ -51,16 +57,19 @@ class ScanSuccessScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   'Event Name: $eventName',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushAndRemoveUntil(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>  HomeScreen(),
+                        builder: (context) => HomeScreen(),
                       ),
+                      (Route<dynamic> route) =>
+                          false, // This clears the entire stack
                     );
                   },
                   child: const Text('Back to HomePage'),

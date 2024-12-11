@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:eventmanagement_app/screen/eventdetail.dart';
 
 class EventScreen extends StatefulWidget {
-  const EventScreen({Key? key}) : super(key: key);
+  const EventScreen({super.key});
 
   @override
   EventPageState createState() => EventPageState();
@@ -25,13 +25,13 @@ class EventPageState extends State<EventScreen> {
         stream: FirebaseFirestore.instance.collection('events').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return Center(child: Text("Error fetching data."));
+            return const Center(child: Text("Error fetching data."));
           }
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           return ListView(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             children: snapshot.data!.docs.map((DocumentSnapshot document) {
               Map<String, dynamic> event = document.data()! as Map<String, dynamic>;
 
@@ -40,7 +40,7 @@ class EventPageState extends State<EventScreen> {
                   : 'No date';
 
               return Container(
-                margin: EdgeInsets.only(bottom: 16.0),
+                margin: const EdgeInsets.only(bottom: 16.0),
                 decoration: BoxDecoration(
                   color: lightYellow, // Assuming this is a predefined color
                   borderRadius: BorderRadius.circular(12.0),
@@ -49,12 +49,12 @@ class EventPageState extends State<EventScreen> {
                       color: Colors.black.withOpacity(0.05),
                       blurRadius: 10.0,
                       spreadRadius: 2.0,
-                      offset: Offset(0, 4),
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Padding(
-                  padding: EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -64,7 +64,7 @@ class EventPageState extends State<EventScreen> {
                           Expanded(
                             child: Text(
                               event['name'] ?? 'Event Name',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 20.0,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
@@ -82,18 +82,18 @@ class EventPageState extends State<EventScreen> {
                           ),
                         ],
                       ),
-                      SizedBox(height: 4.0),
+                      const SizedBox(height: 4.0),
                       Text(
                         event['venue'] ?? 'Venue',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 16.0,
                           color: Colors.black54,
                         ),
                       ),
-                      SizedBox(height: 8.0),
+                      const SizedBox(height: 8.0),
                       Text(
                         event['description'] ?? 'No description provided',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 14.0,
                           fontStyle: FontStyle.italic,
                           color: Colors.black54,
@@ -118,7 +118,7 @@ class EventPageState extends State<EventScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
-                          child: Text('More'),
+                          child: const Text('More'),
                         ),
                       ),
                     ],
