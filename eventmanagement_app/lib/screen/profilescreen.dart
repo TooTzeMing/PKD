@@ -39,7 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final List<String> _householdCategories = ['Single', 'Couple', 'Family'];
   final List<String> _ageLevels = ['Child', 'Teen', 'Adult', 'Senior'];
 
-  Map<String, bool> _editingFields =
+  final Map<String, bool> _editingFields =
       {}; // Map to track edit state for each field
 
   @override
@@ -274,8 +274,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                     const SizedBox(height: 8), // spacing between text
                     Text(
-                      "Your role is ${userRole}",
-                      style: TextStyle(
+                      "Your role is $userRole",
+                      style: const TextStyle(
                         fontSize: 16,
                         color: Colors.black,
                       ),

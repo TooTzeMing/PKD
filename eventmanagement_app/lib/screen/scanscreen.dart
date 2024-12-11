@@ -47,7 +47,7 @@ class _ScanScreenState extends State<ScanScreen> {
       });
 
       // Navigate to success screen
-      Navigator.push(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
           builder: (context) => ScanSuccessScreen(
@@ -55,6 +55,7 @@ class _ScanScreenState extends State<ScanScreen> {
             isDuplicateScan: false, // Pass the success flag
           ),
         ),
+        (Route<dynamic> route) => false, // Remove all previous routes
       );
     }
   }
@@ -84,7 +85,7 @@ class _ScanScreenState extends State<ScanScreen> {
                     handleScanResult(context, scannedEventId, userId);
 
                     // After scanning, reset the processing flag
-                    Future.delayed(Duration(seconds: 2), () {
+                    Future.delayed(const Duration(seconds: 2), () {
                       setState(() {
                         _isProcessing = false;
                       });
@@ -110,7 +111,7 @@ class _ScanScreenState extends State<ScanScreen> {
             ),
           ),
           // Instruction text
-          Positioned(
+          const Positioned(
             bottom: 40,
             left: 0,
             right: 0,

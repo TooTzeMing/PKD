@@ -5,7 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 //import 'package:image_picker/image_picker.dart';
 
 class AddEventScreen extends StatefulWidget {
-  const AddEventScreen({Key? key}) : super(key: key);
+  const AddEventScreen({super.key});
 
   @override
   _AddEventScreenState createState() => _AddEventScreenState();
@@ -75,7 +75,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
        // _imageFile == null
         ) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Please fill in all fields'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -86,7 +86,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
       eventDate = Timestamp.fromDate(parsedDate);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid date format. Please use YYYY-MM-DD.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Invalid date format. Please use YYYY-MM-DD.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -96,7 +96,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
       maxParticipants = int.parse(_maxParticipantsController.text);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Invalid number for maximum participants.'), backgroundColor: Colors.red),
+        const SnackBar(content: Text('Invalid number for maximum participants.'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -127,15 +127,15 @@ class _AddEventScreenState extends State<AddEventScreen> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Success'),
-          content: Text('Event successfully added!'),
+          title: const Text('Success'),
+          content: const Text('Event successfully added!'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
                 Navigator.of(context).pop(); // Optionally close the AddEventScreen after success
               },
-              child: Text('OK'),
+              child: const Text('OK'),
             ),
           ],
         ),
@@ -152,20 +152,20 @@ class _AddEventScreenState extends State<AddEventScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Add Custom Category'),
+          title: const Text('Add Custom Category'),
           content: TextField(
             controller: _categoryController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: 'Category Name',
             ),
           ),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () => Navigator.of(context).pop(),
             ),
             TextButton(
-              child: Text('Add'),
+              child: const Text('Add'),
               onPressed: () async {
                 String newCategory = _categoryController.text;
                 if (newCategory.isNotEmpty) {
@@ -186,64 +186,64 @@ class _AddEventScreenState extends State<AddEventScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Add Event'),
+        title: const Text('Add Event'),
         leading: IconButton(
-          icon: Icon(Icons.close),
+          icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Event Name',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _dateController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Event Date',
                 hintText: 'e.g., YYYY-MM-DD',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.datetime,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _venueController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Venue',
                 border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _descriptionController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Description',
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             TextField(
               controller: _maxParticipantsController,
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Maximum Participants',
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             if (!_isLoadingCategories) ...[
               DropdownButton<String>(
                 value: _selectedCategory,
-                hint: Text('Select Category'),
+                hint: const Text('Select Category'),
                 items: _categories.map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -260,7 +260,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   }
                 },
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 20),
             ],
          /*   GestureDetector(
               onTap: _pickImage,
@@ -277,10 +277,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
               ),
             ), */
-            SizedBox(height: 30),
+            const SizedBox(height: 30),
             ElevatedButton(
               onPressed: _handleSubmit,
-              child: Text('Submit'),
+              child: const Text('Submit'),
             ),
           ],
         ),

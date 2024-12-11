@@ -16,12 +16,21 @@ class HomeScreen extends StatefulWidget {
     'https://www.rurallink.gov.my/wp-content/uploads/2020/09/FUNGSI-PUSAT-KOMUNITI-DESA-1-1024x652.png',
   ];
 
+ HomeScreen({super.key});
+
   @override
   HomeScreenState createState() => HomeScreenState();
 }
 
 class HomeScreenState extends State<HomeScreen> {
   int selectedIndex = 0;
+
+  void refreshHomePage() {
+    setState(() {
+      // Any logic to refresh the data or UI of the homepage
+      print("Homepage refreshed!"); // Debugging placeholder
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +134,7 @@ class HomeScreenState extends State<HomeScreen> {
       case 2:
         return AppBar(
           title: const Text(
-            "Scan QR Code",
+            "Scan QR",
             style: TextStyle(
               color: Colors.black,
               fontSize: 18,
@@ -179,7 +188,7 @@ class HomeScreenState extends State<HomeScreen> {
         MaterialPageRoute(
           builder: (context) => const AddEventScreen(),
         ),
-      );
+      ).then((_) => refreshHomePage());
     }
   }
 
