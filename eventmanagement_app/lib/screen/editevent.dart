@@ -14,17 +14,17 @@ class _EditEventScreenState extends State<EditEventScreen> {
   late TextEditingController _descriptionController;
   late TextEditingController _venueController;
   late TextEditingController _maxParticipantsController;
+  String? _selectedCategory;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.eventDocument['name']);
-    _descriptionController =
-        TextEditingController(text: widget.eventDocument['description']);
-    _venueController =
-        TextEditingController(text: widget.eventDocument['venue']);
+    _descriptionController = TextEditingController(text: widget.eventDocument['description']);
+    _venueController = TextEditingController(text: widget.eventDocument['venue']);
     _maxParticipantsController = TextEditingController(
         text: widget.eventDocument['maxParticipants'].toString());
+    _selectedCategory = widget.eventDocument['category'];
   }
 
   void updateEvent() async {
@@ -35,7 +35,8 @@ class _EditEventScreenState extends State<EditEventScreen> {
       'name': _nameController.text,
       'description': _descriptionController.text,
       'venue': _venueController.text,
-      'maxParticipants': int.parse(_maxParticipantsController.text)
+      'maxParticipants': int.parse(_maxParticipantsController.text),
+      'category': _selectedCategory,
     });
     Navigator.pop(context);
   }
@@ -70,14 +71,43 @@ class _EditEventScreenState extends State<EditEventScreen> {
             ),
             TextField(
               controller: _maxParticipantsController,
-              decoration:
-                  const InputDecoration(labelText: 'Maximum Participants'),
+              decoration: const InputDecoration(labelText: 'Maximum Participants'),
               keyboardType: TextInputType.number,
+            ),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('categories').snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const CircularProgressIndicator();
+                }
+                var categories = snapshot.data!.docs.map((doc) => doc['name'] as String).toList();
+                if (!_selectedCategoryIsValid(categories)) {
+                  _selectedCategory = categories.isNotEmpty ? categories.first : null;
+                }
+                return DropdownButton<String>(
+                  value: _selectedCategory,
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCategory = newValue;
+                    });
+                  },
+                  items: categories.map<DropdownMenuItem<String>>((String category) {
+                    return DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  bool _selectedCategoryIsValid(List<String> categories) {
+    return categories.contains(_selectedCategory);
   }
 
   @override

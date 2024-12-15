@@ -126,7 +126,7 @@ class HomeScreenState extends State<HomeScreen> {
                         );
                       }).toList();
                     },
-                    icon: const Icon(Icons.menu),
+                    icon: const Icon(Icons.settings),
                   ),
                 ]
               : null, // No actions for non-admin users

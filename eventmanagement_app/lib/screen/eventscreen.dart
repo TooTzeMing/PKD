@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; 
@@ -15,20 +14,26 @@ class EventScreen extends StatefulWidget {
 class EventPageState extends State<EventScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  Map<String, bool> registeredEvents = {}; // Tracks registration status of events
+  final TextEditingController _searchController = TextEditingController();
+  Map<String, bool> registeredEvents = {};
+  List<String> categories = [];
+  String? selectedCategory;
+  bool isFilterActive = false;
 
+  
   String formatDate(Timestamp timestamp) {
     DateTime dateTime = timestamp.toDate();
     return DateFormat('d MMM').format(dateTime);
   }
 
+  
+
   @override
   void initState() {
     super.initState();
     fetchRegisteredEvents();
+    fetchCategories();
   }
-
-   static const Color lightYellow = Color(0xFFFFF9C4);
 
   void fetchRegisteredEvents() async {
     final User? user = _auth.currentUser;
@@ -43,6 +48,58 @@ class EventPageState extends State<EventScreen> {
         registeredEvents = registeredEventIds;
       });
     }
+  }
+
+  Future<void> fetchCategories() async {
+    try {
+      var snapshot = await _firestore.collection('categories').get();
+      var fetchedCategories = snapshot.docs.map((doc) => doc.data()['name'] as String).toList();
+      setState(() {
+        categories = fetchedCategories;
+      });
+    } catch (e) {
+      print("Failed to fetch categories: $e");
+    }
+  }
+
+  void showCategoryFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Sort by category'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: categories.map((String category) {
+                return ListTile(
+                  title: Text(category),
+                  onTap: () {
+                    setState(() {
+                      selectedCategory = category;
+                      isFilterActive = true;
+                      Navigator.pop(context);
+                    });
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Clear Filter'),
+              onPressed: () {
+                setState(() {
+                  selectedCategory = null;
+                  isFilterActive = false;
+                });
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void registerForEvent(String eventName, String eventId) async {
@@ -85,138 +142,187 @@ class EventPageState extends State<EventScreen> {
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('events').snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) return Text("Error: ${snapshot.error}");
-          if (snapshot.connectionState == ConnectionState.waiting) return Center(child: CircularProgressIndicator());
-          return ListView(
-            padding: EdgeInsets.all(16.0),
-            children: snapshot.data!.docs.map((DocumentSnapshot document) {
-              Map<String, dynamic> event = document.data()! as Map<String, dynamic>;
-              String formattedDate = event['date'] != null && event['date'] is Timestamp
-                  ? formatDate(event['date'] as Timestamp)
-                  : 'No date';
-              String eventId = document.id;
-              bool isRegistered = registeredEvents.containsKey(eventId);
-
-              return Container(
-                margin: EdgeInsets.only(bottom: 16.0),
-                decoration: BoxDecoration(
-                  color: lightYellow,
-                  borderRadius: BorderRadius.circular(12.0),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10.0,
-                      spreadRadius: 2.0,
-                      offset: Offset(0, 4),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      labelText: 'Search by Event Name',
+                      suffixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
-                  ],
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              event['name'] ?? 'Event Name',
-                              style: TextStyle(
-                                fontSize: 20.0,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.black87,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            formattedDate,
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey[850],
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: 4.0),
-                      Text(
-                        event['venue'] ?? 'Venue',
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      SizedBox(height: 8.0),
-                      Text(
-                        event['description'] ?? 'No description provided',
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.black54,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          if (isRegistered)
-                            ElevatedButton(
-                              onPressed: () => unregisterFromEvent(event['name'], eventId),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.redAccent, // Light red color
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: Text('Remove'),
-                            )
-                          else
-                            ElevatedButton(
-                              onPressed: () => registerForEvent(event['name'], eventId),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.lightGreen, // light green color
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              child: Text('Register'),
-                            ),
-                          SizedBox(width: 8),
-                          ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => EventDetailScreen(eventId: document.id),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.lightGreen, // light green color
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text('More'),
-                          ),
-                        ],
-                      ),
-                    ],
+                    onChanged: (value) => setState(() {}),
                   ),
                 ),
-              );
-            }).toList(),
-          );
-        },
+                IconButton(
+                  icon: Icon(isFilterActive ? Icons.filter_alt_off : Icons.filter_list),
+                  onPressed: showCategoryFilterDialog,
+                  tooltip: isFilterActive ? 'Clear Filter' : 'Filter by Category',
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestore.collection('events').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) return Text("Error: ${snapshot.error}");
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                List<DocumentSnapshot> documents = snapshot.data!.docs;
+                if (_searchController.text.isNotEmpty) {
+                  documents = documents.where((doc) => doc['name'].toString().toLowerCase().contains(_searchController.text.toLowerCase())).toList();
+                }
+                if (selectedCategory != null) {
+                  documents = documents.where((doc) => (doc.data() as Map<String, dynamic>).containsKey('category') && doc['category'] == selectedCategory).toList();
+                }
+
+                if (documents.isEmpty) {
+                  return Center(child: Text("No event found. Please try another category."));
+                }
+
+                return ListView(
+                  padding: EdgeInsets.all(16.0),
+                  children: documents.map((DocumentSnapshot document) {
+                    Map<String, dynamic> event = document.data()! as Map<String, dynamic>;
+                    String formattedDate = event['date'] != null && event['date'] is Timestamp
+                        ? formatDate(event['date'] as Timestamp)
+                        : 'No date';
+                    String eventId = document.id;
+                    bool isRegistered = registeredEvents.containsKey(eventId);
+
+                    return buildEventTile(context, event, formattedDate, eventId, isRegistered);
+                  }).toList(),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget buildEventTile(BuildContext context, Map<String, dynamic> event, String formattedDate, String eventId, bool isRegistered) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.0),
+      decoration: BoxDecoration(
+        color: Color(0xFFFFF9C4),
+        borderRadius: BorderRadius.circular(12.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10.0,
+            spreadRadius: 2.0,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    event['name'] ?? 'Event Name',
+                    style: TextStyle(
+                      fontSize: 20.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  formattedDate,
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey[850],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 4.0),
+            Text(
+              event['venue'] ?? 'Venue',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.black54,
+              ),
+            ),
+            SizedBox(height: 8.0),
+           /* Text(
+              event['description'] ?? 'No description provided',
+              style: TextStyle(
+                fontSize: 14.0,
+                fontStyle: FontStyle.italic,
+                color: Colors.black54,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),*/
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (isRegistered)
+                  ElevatedButton(
+                    onPressed: () => unregisterFromEvent(event['name'], eventId),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: Text('Remove'),
+                  )
+                else
+                  ElevatedButton(
+                    onPressed: () => registerForEvent(event['name'], eventId),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.lightGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    child: Text('Register'),
+                  ),
+                SizedBox(width: 8),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailScreen(eventId: eventId),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.lightGreen,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  child: Text('More'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
