@@ -130,7 +130,7 @@ class AttendanceReportScreen extends StatelessWidget {
                             return ListTile(
                               leading: const Icon(Icons.person),
                               title: Text(attendee['name']),
-                              subtitle: Text('$formattedTime'),
+                              subtitle: Text(formattedTime),
                             );
                           },
                         ),

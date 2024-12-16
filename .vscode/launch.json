@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "eventmanagement_app",
+            "cwd": "eventmanagement_app",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "eventmanagement_app (profile mode)",
+            "cwd": "eventmanagement_app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "eventmanagement_app (release mode)",
+            "cwd": "eventmanagement_app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}

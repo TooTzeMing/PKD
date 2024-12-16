@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart' as carousel;
 import 'package:eventmanagement_app/services/global.dart';
 import 'package:eventmanagement_app/services/auth_services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeScreen extends StatefulWidget {
   final List<String> imgList = [
@@ -16,7 +16,7 @@ class HomeScreen extends StatefulWidget {
     'https://www.rurallink.gov.my/wp-content/uploads/2020/09/FUNGSI-PUSAT-KOMUNITI-DESA-1-1024x652.png',
   ];
 
- HomeScreen({super.key});
+  HomeScreen({super.key});
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -54,6 +54,57 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                     ))
                 .toList(),
+          ),
+
+          // Title for the Registered Events section
+          const Padding(
+            padding: EdgeInsets.all(8.0),
+            child: Text(
+              "Registered Events", // Title text
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          // StreamBuilder for events
+          StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance.collection('events').snapshots(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              var events = snapshot.data!.docs;
+              return Expanded(
+                child: ListView.builder(
+                  itemCount: events.length,
+                  itemBuilder: (context, index) {
+                    var event = events[index];
+                    return Card(
+                      margin: const EdgeInsets.all(8),
+                      child: ListTile(
+                        title: Text(event['name']),
+                        subtitle: Text(event['description']),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.arrow_forward),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EventDetailScreen(
+                                  eventDocument: event,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
         ],
       ),
@@ -216,6 +267,49 @@ class HomeScreenState extends State<HomeScreen> {
           ],
         );
       },
+    );
+  }
+}
+
+class EventDetailScreen extends StatelessWidget {
+  final DocumentSnapshot eventDocument;
+
+  const EventDetailScreen({super.key, required this.eventDocument});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(eventDocument['name']),
+        backgroundColor: Colors.yellow,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Description: ${eventDocument['description']}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Venue: ${eventDocument['venue']}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Max Participants: ${eventDocument['maxParticipants']}',
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Category: ${eventDocument['category']}',
+              style: const TextStyle(fontSize: 16),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -83,17 +83,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           children: [
             const SizedBox(height: 30),
             PrettyQrView.data(data: qrData),
-
             const SizedBox(height: 20),
-
             Text(
                 'Description: ${event['description'] ?? 'No description provided'}',
                 style: const TextStyle(fontSize: 16, height: 1.5)),
             Text('Maximum Participants: ${event['maxParticipants'].toString()}',
                 style: const TextStyle(fontSize: 16, height: 1.5)),
-
             const SizedBox(height: 30),
-
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
