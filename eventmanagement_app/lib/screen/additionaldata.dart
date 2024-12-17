@@ -208,7 +208,10 @@ class _AdditionalDataState extends State<AdditionalData> {
                   "Sabah",
                   "Sarawak",
                   "Perak",
-                  "Melaka"
+                  "Melaka",
+                  "Pulau Pinang",
+                  "Putra jaya",
+                  "W.P Labuan",
                 ],
                 selectedValue: _selectedState,
                 onChanged: (value) {
@@ -221,7 +224,7 @@ class _AdditionalDataState extends State<AdditionalData> {
                 label: "Household Category",
                 hint: "Please select your household category.",
                 icon: Icons.group,
-                items: ["Single", "Married", "Family"],
+                items: ["B40", "M40", "T20"],
                 selectedValue: _selectedHouseholdCategory,
                 onChanged: (value) {
                   setState(() {
@@ -233,7 +236,7 @@ class _AdditionalDataState extends State<AdditionalData> {
                 label: "Age Level",
                 hint: "Please select your age level.",
                 icon: Icons.calendar_today,
-                items: ["Child", "Teen", "Adult", "Senior"],
+                items: ["<18 age", "18-30 age", "31-50 age", ">50 age"],
                 selectedValue: _selectedAgeLevel,
                 onChanged: (value) {
                   setState(() {
