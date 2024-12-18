@@ -105,41 +105,104 @@ class EventPageState extends State<EventScreen> {
   void registerForEvent(String eventName, String eventId) async {
     final User? user = _auth.currentUser;
     if (user != null && !registeredEvents.containsKey(eventId)) {
-      _firestore.collection('registration').add({
-        'registereduser': user.uid,
-        'registeredevent': eventId,
-      }).then((value) {
+      try {
+        // Add the registration to the 'registration' collection
+        await _firestore.collection('registration').add({
+          'registereduser': user.uid,
+          'registeredevent': eventId,
+        });
+
+        // Update the 'attendance' collection
+        final attendanceDoc = _firestore.collection('attendance').doc(eventId);
+        await attendanceDoc.set({
+          'registeredUsers': FieldValue.arrayUnion([
+            {
+              'userId': user.uid,
+              'timestamp': DateTime.now(), // Add timestamp
+            }
+          ]),
+        }, SetOptions(merge: true));
+
+        // Update the local state
         setState(() {
           registeredEvents[eventId] = true;
         });
+
+        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registered for $eventName')),
         );
-      }).catchError((error) {
+      } catch (error) {
+        // Handle errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration failed: $error')),
         );
-      });
+      }
     }
   }
 
   void unregisterFromEvent(String eventName, String eventId) async {
     final User? user = _auth.currentUser;
     if (user != null && registeredEvents.containsKey(eventId)) {
-      var registrations = await _firestore
-          .collection('registration')
-          .where('registereduser', isEqualTo: user.uid)
-          .where('registeredevent', isEqualTo: eventId)
-          .get();
-      for (var doc in registrations.docs) {
-        await _firestore.collection('registration').doc(doc.id).delete();
+      try {
+        // Remove the registration from the 'registration' collection
+        var registrations = await _firestore
+            .collection('registration')
+            .where('registereduser', isEqualTo: user.uid)
+            .where('registeredevent', isEqualTo: eventId)
+            .get();
+        for (var doc in registrations.docs) {
+          await _firestore.collection('registration').doc(doc.id).delete();
+        }
+
+        // Fetch the attendance document to find the exact entry for this user
+        final attendanceDocRef =
+            _firestore.collection('attendance').doc(eventId);
+        final attendanceDoc = await attendanceDocRef.get();
+
+        if (attendanceDoc.exists) {
+          List<dynamic> registeredUsers =
+              (attendanceDoc.data()?['registeredUsers'] as List<dynamic>?) ??
+                  [];
+
+          Map<String, dynamic>? userEntry = registeredUsers.firstWhere(
+            (entry) => entry['userId'] == user.uid,
+            orElse: () => null,
+          );
+
+          if (userEntry != null) {
+            // Remove the user's entry from the 'registeredUsers' array
+            await attendanceDocRef.update({
+              'registeredUsers': FieldValue.arrayRemove([userEntry]),
+            });
+
+            // After removing the user, check if 'registeredUsers' is empty
+            final updatedDoc = await attendanceDocRef.get();
+            List<dynamic> updatedRegisteredUsers =
+                updatedDoc.data()?['registeredUsers'] ?? [];
+
+            // If 'registeredUsers' is empty, delete the document
+            if (updatedRegisteredUsers.isEmpty) {
+              await attendanceDocRef.delete();
+            }
+          }
+        }
+
+        // Update the local state
+        setState(() {
+          registeredEvents.remove(eventId);
+        });
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unregistered from $eventName')),
+        );
+      } catch (error) {
+        // Handle errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unregistration failed: $error')),
+        );
       }
-      setState(() {
-        registeredEvents.remove(eventId);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unregistered from $eventName')),
-      );
     }
   }
 

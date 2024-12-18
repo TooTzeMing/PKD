@@ -15,39 +15,95 @@ class AttendanceReportScreen extends StatelessWidget {
   });
 
   Future<List<Map<String, dynamic>>> fetchAttendees() async {
-    final QuerySnapshot participantSnapshot = await FirebaseFirestore.instance
+    final attendanceSnapshot = await FirebaseFirestore.instance
         .collection('attendance')
-        .where('eventId', isEqualTo: eventId)
+        .doc(eventId)
         .get();
 
-    List<Map<String, dynamic>> attendees = [];
-    for (var doc in participantSnapshot.docs) {
-      final userId = doc['userId'];
-      final timestamp = doc['timestamp']; // Assuming this field exists.
-
-      // Fetch user details from users collection
-      final DocumentSnapshot userSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      if (userSnapshot.exists) {
-        attendees.add({
-          'name': userSnapshot['name'],
-          'timestamp': timestamp,
-        });
-      }
+    if (!attendanceSnapshot.exists) {
+      return [];
     }
-    return attendees;
+
+    // Get the list of attendees (contains maps with userId and timestamp)
+    List<dynamic> attendees = attendanceSnapshot['attendees'] ?? [];
+    if (attendees.isEmpty) return [];
+
+    // Extract userIds from attendees
+    List<String> userIds =
+        attendees.map((attendee) => attendee['userId'] as String).toList();
+
+    // Fetch user details for all IDs in a single batch
+    final userDocs = await FirebaseFirestore.instance
+        .collection('users')
+        .where(FieldPath.documentId, whereIn: userIds)
+        .get();
+
+    // Map user details with their respective timestamps
+    return userDocs.docs.map((userDoc) {
+      final userId = userDoc.id;
+      final attendeeInfo =
+          attendees.firstWhere((attendee) => attendee['userId'] == userId);
+
+      return {
+        'name': userDoc['name'],
+        'timestamp': attendeeInfo['timestamp'],
+      };
+    }).toList();
   }
 
-  String formatTimestamp(Timestamp timestamp) {
+  Future<List<Map<String, dynamic>>> fetchRegisteredButNoAttend() async {
+    final attendanceSnapshot = await FirebaseFirestore.instance
+        .collection('attendance')
+        .doc(eventId)
+        .get();
+
+    if (!attendanceSnapshot.exists) {
+      return [];
+    }
+
+    // Get the list of registered users and attendees
+    List<dynamic> registeredUsers = attendanceSnapshot['registeredUsers'] ?? [];
+    List<dynamic> attendees = attendanceSnapshot['attendees'] ?? [];
+
+    // Extract userIds from both lists
+    List<String> attendeeUserIds =
+        attendees.map((attendee) => attendee['userId'] as String).toList();
+    List<String> registeredUserIds =
+        registeredUsers.map((user) => user['userId'] as String).toList();
+
+    // Filter registered users who haven't attended
+    List<String> notAttendedUserIds = registeredUserIds
+        .where((userId) => !attendeeUserIds.contains(userId))
+        .toList();
+
+    if (notAttendedUserIds.isEmpty) return [];
+
+    // Fetch user details for not attended user IDs
+    final userDocs = await FirebaseFirestore.instance
+        .collection('users')
+        .where(FieldPath.documentId, whereIn: notAttendedUserIds)
+        .get();
+
+    // Map user details with null timestamp (no attendance)
+    return userDocs.docs.map((userDoc) {
+      final userId = userDoc.id;
+      final attendeeInfo =
+          registeredUsers.firstWhere((user) => user['userId'] == userId);
+      return {
+        'name': userDoc['name'],
+        'timestamp': attendeeInfo['timestamp'],
+      };
+    }).toList();
+  }
+
+  String formatTimestamp(Timestamp? timestamp) {
+    if (timestamp == null) return "N/A";
     final dateTime = timestamp.toDate();
     return DateFormat('HH:mm:ss a dd-MM-yyyy').format(dateTime);
   }
 
-  Future<void> generateAndDownloadPdf(
-      List<Map<String, dynamic>> attendees) async {
+  Future<void> generateAndDownloadPdf(List<Map<String, dynamic>> attendees,
+      List<Map<String, dynamic>> registeredButNoAttend) async {
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -57,11 +113,19 @@ class AttendanceReportScreen extends StatelessWidget {
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
               pw.Text(
-                'Attendance Report for $eventName',
+                '$eventName - Attendance Report',
                 style:
                     pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 20),
+
+              // Attendees Table
+              pw.Text(
+                'Attendees:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
                 headers: ['Name', 'Scanned Time'],
                 data: attendees.map((attendee) {
@@ -70,6 +134,32 @@ class AttendanceReportScreen extends StatelessWidget {
                     formatTimestamp(attendee['timestamp']),
                   ];
                 }).toList(),
+                border: pw.TableBorder.all(),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                cellStyle: pw.TextStyle(fontSize: 12),
+                cellAlignment: pw.Alignment.centerLeft,
+              ),
+              pw.SizedBox(height: 20),
+
+              // Registered but not attended Table
+              pw.Text(
+                'Registered but not attended:',
+                style:
+                    pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Table.fromTextArray(
+                headers: ['Name', 'Scanned Time'],
+                data: registeredButNoAttend.map((user) {
+                  return [
+                    user['name'],
+                    formatTimestamp(user['timestamp']),
+                  ];
+                }).toList(),
+                border: pw.TableBorder.all(),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                cellStyle: pw.TextStyle(fontSize: 12),
+                cellAlignment: pw.Alignment.centerLeft,
               ),
             ],
           );
@@ -79,7 +169,7 @@ class AttendanceReportScreen extends StatelessWidget {
 
     await Printing.sharePdf(
       bytes: await pdf.save(),
-      filename: 'Attendance_Report.pdf',
+      filename: '$eventName _Attendance_Report.pdf',
     );
   }
 
@@ -100,43 +190,74 @@ class AttendanceReportScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: fetchAttendees(),
+              child: FutureBuilder(
+                future: Future.wait([
+                  fetchAttendees(),
+                  fetchRegisteredButNoAttend(),
+                ]),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
 
                   if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Error: ${snapshot.error}'),
-                    );
+                    return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('No attendees have checked in yet.');
+                    return const Text(
+                        'No attendees or registered users available.');
                   }
 
-                  final attendees = snapshot.data!;
+                  final attendees =
+                      snapshot.data![0] as List<Map<String, dynamic>>;
+                  final registeredButNoAttend =
+                      snapshot.data![1] as List<Map<String, dynamic>>;
+
                   return Column(
                     children: [
                       Expanded(
-                        child: ListView.builder(
-                          itemCount: attendees.length,
-                          itemBuilder: (context, index) {
-                            final attendee = attendees[index];
-                            final formattedTime =
-                                formatTimestamp(attendee['timestamp']);
-                            return ListTile(
-                              leading: const Icon(Icons.person),
-                              title: Text(attendee['name']),
-                              subtitle: Text(formattedTime),
-                            );
-                          },
+                        child: ListView(
+                          children: [
+                            const Text(
+                              'Attendees:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            ...attendees.map((attendee) {
+                              return ListTile(
+                                leading: const Icon(Icons.person),
+                                title: Text(attendee['name']),
+                                subtitle: Text(
+                                    formatTimestamp(attendee['timestamp'])),
+                              );
+                            }),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Registered but not attended:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            ...registeredButNoAttend.map((user) {
+                              return ListTile(
+                                leading: const Icon(Icons.person_outline),
+                                title: Text(user['name']),
+                                subtitle:
+                                    Text(formatTimestamp(user['timestamp'])),
+                              );
+                            }),
+                          ],
                         ),
                       ),
                       ElevatedButton(
-                        onPressed: () => generateAndDownloadPdf(attendees),
+                        onPressed: () {
+                          final attendee = [
+                            ...attendees,
+                          ];
+                          final registeredButNoAtten = [
+                            ...registeredButNoAttend
+                          ];
+                          generateAndDownloadPdf(
+                              attendee, registeredButNoAtten);
+                        },
                         child: const Text('Download PDF'),
                       ),
                     ],

@@ -21,41 +21,81 @@ class _ScanScreenState extends State<ScanScreen> {
       BuildContext context, String scannedEventId, String userId) async {
     final attendanceRef = FirebaseFirestore.instance.collection('attendance');
 
-    // Check if the user has already scanned for this event
-    QuerySnapshot existingRecord = await attendanceRef
-        .where('eventId', isEqualTo: scannedEventId)
-        .where('userId', isEqualTo: userId)
-        .get();
+    try {
+      // Check if a document for the scannedEventId already exists
+      DocumentReference eventDocRef = attendanceRef.doc(scannedEventId);
+      DocumentSnapshot eventDocSnapshot = await eventDocRef.get();
 
-    if (existingRecord.docs.isNotEmpty) {
-      // User has already scanned for this event
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ScanSuccessScreen(
-            eventId: scannedEventId,
-            isDuplicateScan: true, // Pass the duplicate scan flag
+      if (eventDocSnapshot.exists) {
+        // Check if the user is already in the attendees array
+        List<dynamic> attendees = eventDocSnapshot['attendees'] ?? [];
+
+        if (attendees.any((attendee) => attendee['userId'] == userId)) {
+          // User has already scanned for this event
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ScanSuccessScreen(
+                eventId: scannedEventId,
+                isDuplicateScan: true, // Pass the duplicate scan flag
+              ),
+            ),
+          );
+        } else {
+          // Add the userId to the attendees array
+          await eventDocRef.update({
+            'attendees': FieldValue.arrayUnion([
+              {
+                'userId': userId,
+                'timestamp': DateTime.now(), // Generate timestamp locally
+              },
+            ]),
+          });
+
+          // Navigate to success screen
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ScanSuccessScreen(
+                eventId: scannedEventId,
+                isDuplicateScan: false, // Pass the success flag
+              ),
+            ),
+            (Route<dynamic> route) => false, // Remove all previous routes
+          );
+        }
+      } else {
+        // Create a new document with the eventId and add the userId to the attendees array
+        await eventDocRef.set({
+          'eventId': scannedEventId,
+          'attendees': FieldValue.arrayUnion([
+            {
+              'userId': userId,
+              'timestamp': DateTime.now(), // Generate timestamp locally
+            },
+          ]),
+        });
+
+        // Navigate to success screen
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScanSuccessScreen(
+              eventId: scannedEventId,
+              isDuplicateScan: false, // Pass the success flag
+            ),
           ),
-        ),
-      );
-    } else {
-      // Add new record to the attendance database
-      await attendanceRef.add({
-        'eventId': scannedEventId,
-        'userId': userId,
-        'timestamp': FieldValue.serverTimestamp(),
+          (Route<dynamic> route) => false, // Remove all previous routes
+        );
+      }
+    } catch (e) {
+      // Handle errors
+      print('Error handling scan result: $e');
+      setState(() {
+        _isProcessing = false; // Reset the flag in case of an error
       });
-
-      // Navigate to success screen
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ScanSuccessScreen(
-            eventId: scannedEventId,
-            isDuplicateScan: false, // Pass the success flag
-          ),
-        ),
-        (Route<dynamic> route) => false, // Remove all previous routes
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred. Please try again.')),
       );
     }
   }
