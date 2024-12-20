@@ -178,12 +178,25 @@ class EventPageState extends State<EventScreen> {
 
             // After removing the user, check if 'registeredUsers' is empty
             final updatedDoc = await attendanceDocRef.get();
-            List<dynamic> updatedRegisteredUsers =
-                updatedDoc.data()?['registeredUsers'] ?? [];
 
-            // If 'registeredUsers' is empty, delete the document
-            if (updatedRegisteredUsers.isEmpty) {
+// Check if the document exists and contains data
+            if (!updatedDoc.exists ||
+                updatedDoc.data() == null ||
+                updatedDoc.data()!.isEmpty) {
+              // If the document data is empty, delete the document
               await attendanceDocRef.delete();
+            } else {
+              // If document has data, handle it accordingly
+              List<dynamic> updatedRegisteredUsers =
+                  updatedDoc.data()?['registeredUsers'] ?? [];
+
+              // If 'registeredUsers' is empty, delete the document
+              if (updatedRegisteredUsers.isEmpty) {
+                await attendanceDocRef.update({
+                  'registeredUsers':
+                      FieldValue.delete(), // This will delete the field
+                });
+              }
             }
           }
         }

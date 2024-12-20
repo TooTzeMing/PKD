@@ -26,24 +26,53 @@ class _ScanScreenState extends State<ScanScreen> {
       DocumentReference eventDocRef = attendanceRef.doc(scannedEventId);
       DocumentSnapshot eventDocSnapshot = await eventDocRef.get();
 
-      if (eventDocSnapshot.exists) {
-        // Check if the user is already in the attendees array
-        List<dynamic> attendees = eventDocSnapshot['attendees'] ?? [];
+      // Check if the document exists and has the 'attendees' field
+      if (eventDocSnapshot.exists && eventDocSnapshot.data() != null) {
+        Map<String, dynamic>? data =
+            eventDocSnapshot.data() as Map<String, dynamic>?;
 
-        if (attendees.any((attendee) => attendee['userId'] == userId)) {
-          // User has already scanned for this event
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScanSuccessScreen(
-                eventId: scannedEventId,
-                isDuplicateScan: true, // Pass the duplicate scan flag
+        if (data != null && data.containsKey('attendees')) {
+          // The 'attendees' field exists
+          List<dynamic> attendees = data['attendees'] ?? [];
+
+          if (attendees.any((attendee) => attendee['userId'] == userId)) {
+            // User has already scanned for this event
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ScanSuccessScreen(
+                  eventId: scannedEventId,
+                  isDuplicateScan: true, // Pass the duplicate scan flag
+                ),
               ),
-            ),
-          );
+            );
+          } else {
+            // Add the userId to the attendees array
+            await eventDocRef.update({
+              'attendees': FieldValue.arrayUnion([
+                {
+                  'userId': userId,
+                  'timestamp': DateTime.now(), // Generate timestamp locally
+                },
+              ]),
+            });
+
+            // Navigate to success screen
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ScanSuccessScreen(
+                  eventId: scannedEventId,
+                  isDuplicateScan: false, // Pass the success flag
+                ),
+              ),
+              (Route<dynamic> route) => false, // Remove all previous routes
+            );
+          }
         } else {
-          // Add the userId to the attendees array
+          // 'attendees' field does not exist; create and add the user
           await eventDocRef.update({
+            'eventId': scannedEventId,
             'attendees': FieldValue.arrayUnion([
               {
                 'userId': userId,
@@ -65,9 +94,12 @@ class _ScanScreenState extends State<ScanScreen> {
           );
         }
       } else {
-        // Create a new document with the eventId and add the userId to the attendees array
+        // The document does not exist; create it
         await eventDocRef.set({
           'eventId': scannedEventId,
+        }, SetOptions(merge: true)); // This ensures merging with existing data
+
+        await eventDocRef.update({
           'attendees': FieldValue.arrayUnion([
             {
               'userId': userId,
