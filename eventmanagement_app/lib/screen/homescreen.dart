@@ -118,40 +118,31 @@ class HomeScreenState extends State<HomeScreen> {
       bottomNavigationBar: CircleNavBar(
         activeIndex: selectedIndex,
         activeIcons: const [
-          Icon(Icons.home, color: Colors.deepPurple),
-          Icon(Icons.event, color: Colors.deepPurple),
-          Icon(Icons.qr_code_scanner, color: Colors.deepPurple),
-          Icon(Icons.people, color: Colors.deepPurple),
+          Icon(Icons.home, color: Colors.black),
+          Icon(Icons.event, color: Colors.black),
+          Icon(Icons.qr_code_scanner, color: Colors.black),
+          Icon(Icons.people, color: Colors.black),
         ],
         inactiveIcons: const [
-          Text("Home"),
+          Text("Home", style: TextStyle(fontFamily: "RobotoCondensed")),
           Text("Events"),
           Text("Scan"),
           Text("Profile"),
         ],
         color: Colors.white,
-        circleWidth: 60,
-        height: 70,
+        circleWidth: 55,
+        height: 60,
         onTap: (index) {
           setState(() {
             selectedIndex = index;
           });
         },
-        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 10),
-        cornerRadius: const BorderRadius.only(
-          topLeft: Radius.circular(8),
-          topRight: Radius.circular(8),
-          bottomLeft: Radius.circular(24),
-          bottomRight: Radius.circular(24),
-        ),
-        shadowColor: Colors.grey,
-        elevation: 5,
       ),
       body: pages[selectedIndex],
     );
   }
 
-  AppBar _getAppBar() {
+  AppBar? _getAppBar() {
     switch (selectedIndex) {
       case 1:
         return AppBar(
@@ -183,18 +174,7 @@ class HomeScreenState extends State<HomeScreen> {
               : null, // No actions for non-admin users
         );
       case 2:
-        return AppBar(
-          title: const Text(
-            "Scan QR",
-            style: TextStyle(
-              color: Colors.black,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          centerTitle: true,
-          backgroundColor: Colors.yellow,
-        );
+        return null;
       case 3:
         return AppBar(
           title: const Text(

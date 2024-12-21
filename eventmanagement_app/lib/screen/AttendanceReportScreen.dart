@@ -167,9 +167,9 @@ class AttendanceReportScreen extends StatelessWidget {
       ),
     );
 
-    await Printing.sharePdf(
-      bytes: await pdf.save(),
-      filename: '$eventName _Attendance_Report.pdf',
+    await Printing.layoutPdf(
+      name: 'Attendance_Report_$eventName.pdf',
+      onLayout: (format) async => pdf.save(),
     );
   }
 
@@ -204,15 +204,15 @@ class AttendanceReportScreen extends StatelessWidget {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text(
-                        'No attendees or registered users available.');
-                  }
-
                   final attendees =
                       snapshot.data![0] as List<Map<String, dynamic>>;
                   final registeredButNoAttend =
                       snapshot.data![1] as List<Map<String, dynamic>>;
+
+                  if (attendees.isEmpty && registeredButNoAttend.isEmpty) {
+                    return const Text(
+                        'No attendees or registered users available.');
+                  }
 
                   return Column(
                     children: [
