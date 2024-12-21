@@ -310,59 +310,68 @@ class EventPageState extends State<EventScreen> {
 
   Widget buildEventTile(BuildContext context, Map<String, dynamic> event,
       String formattedDate, String eventId, bool isRegistered) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFF9C4),
-        borderRadius: BorderRadius.circular(12.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10.0,
-            spreadRadius: 2.0,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EventDetailScreen(eventId: eventId),
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    event['name'] ?? 'Event Name',
-                    style: const TextStyle(
-                      fontSize: 20.0,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10.0,
+              spreadRadius: 2.0,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      event['name'] ?? 'Event Name',
+                      style: const TextStyle(
+                        fontSize: 20.0,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                Text(
-                  formattedDate,
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[850],
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey[850],
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4.0),
-            Text(
-              event['venue'] ?? 'Venue',
-              style: const TextStyle(
-                fontSize: 16.0,
-                color: Colors.black54,
+                ],
               ),
-            ),
-            const SizedBox(height: 8.0),
-            /* Text(
+              const SizedBox(height: 4.0),
+              Text(
+                event['venue'] ?? 'Venue',
+                style: const TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.black54,
+                ),
+              ),
+              const SizedBox(height: 8.0),
+              /* Text(
               event['description'] ?? 'No description provided',
               style: TextStyle(
                 fontSize: 14.0,
@@ -372,54 +381,39 @@ class EventPageState extends State<EventScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),*/
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (isRegistered)
-                  ElevatedButton(
-                    onPressed: () =>
-                        unregisterFromEvent(event['name'], eventId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.redAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (isRegistered)
+                    ElevatedButton(
+                      onPressed: () =>
+                          unregisterFromEvent(event['name'], eventId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                    ),
-                    child: const Text('Remove'),
-                  )
-                else
-                  ElevatedButton(
-                    onPressed: () => registerForEvent(event['name'], eventId),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.lightGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
+                      child: const Text('Remove'),
+                    )
+                  else
+                    ElevatedButton(
+                      onPressed: () => registerForEvent(event['name'], eventId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.lightGreen,
+                        foregroundColor: Colors.black, // Text color
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
+                      child: const Text('Register'),
                     ),
-                    child: const Text('Register'),
-                  ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            EventDetailScreen(eventId: eventId),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.lightGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text('More'),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
