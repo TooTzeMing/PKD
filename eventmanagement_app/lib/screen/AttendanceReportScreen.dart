@@ -136,7 +136,7 @@ class AttendanceReportScreen extends StatelessWidget {
                 }).toList(),
                 border: pw.TableBorder.all(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                cellStyle: pw.TextStyle(fontSize: 12),
+                cellStyle: const pw.TextStyle(fontSize: 12),
                 cellAlignment: pw.Alignment.centerLeft,
               ),
               pw.SizedBox(height: 20),
@@ -158,7 +158,7 @@ class AttendanceReportScreen extends StatelessWidget {
                 }).toList(),
                 border: pw.TableBorder.all(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                cellStyle: pw.TextStyle(fontSize: 12),
+                cellStyle: const pw.TextStyle(fontSize: 12),
                 cellAlignment: pw.Alignment.centerLeft,
               ),
             ],
@@ -204,10 +204,8 @@ class AttendanceReportScreen extends StatelessWidget {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
-                  final attendees =
-                      snapshot.data![0] as List<Map<String, dynamic>>;
-                  final registeredButNoAttend =
-                      snapshot.data![1] as List<Map<String, dynamic>>;
+                  final attendees = snapshot.data![0];
+                  final registeredButNoAttend = snapshot.data![1];
 
                   if (attendees.isEmpty && registeredButNoAttend.isEmpty) {
                     return const Text(

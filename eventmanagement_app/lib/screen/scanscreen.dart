@@ -127,7 +127,7 @@ class _ScanScreenState extends State<ScanScreen> {
         _isProcessing = false; // Reset the flag in case of an error
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('An error occurred. Please try again.')),
+        const SnackBar(content: Text('An error occurred. Please try again.')),
       );
     }
   }
