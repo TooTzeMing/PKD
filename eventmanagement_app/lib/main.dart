@@ -1,3 +1,5 @@
+import 'package:eventmanagement_app/screen/forgetpassword.dart';
+import 'package:eventmanagement_app/screen/resetpassword.dart';
 import 'package:eventmanagement_app/screen/viewAccount.dart';
 import 'screen/homescreen.dart';
 import 'package:flutter/material.dart';
@@ -29,6 +31,7 @@ class MyApp extends StatelessWidget {
         '/generate': (context) => const Generatecode(),
         '/home': (context) => HomeScreen(),
         '/viewAccount': (context) => const ViewAccount(),
+        '/forgetpassword': (context) => const ForgotPassword(),
       },
       debugShowCheckedModeBanner: false, // Hide the debug banner (optional)
     );

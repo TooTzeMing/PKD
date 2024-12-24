@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:eventmanagement_app/screen/annoucement_management.dart';
 import 'package:eventmanagement_app/screen/viewAccount.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -27,20 +28,28 @@ class _ProfilePageState extends State<ProfilePage> {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? currentUser = FirebaseAuth.instance.currentUser;
-  String? _activeField; // Tracks the currently active (editable) field
+  String? _activeField;
 
-  // Dropdown options
   final List<String> _genders = ['Male', 'Female', 'Other'];
   final List<String> _states = [
-    'California',
-    'Texas',
-    'New York'
-  ]; // Example states
+    'Johor',
+    'Kedah',
+    'Kelantan',
+    'Melaka',
+    'Negeri Sembilan',
+    'Pahang',
+    'Perak',
+    'Perlis',
+    'Pulau Pinang',
+    'Sabah',
+    'Sarawak',
+    'Selangor',
+    'Terengganu'
+  ];
   final List<String> _householdCategories = ['Single', 'Couple', 'Family'];
   final List<String> _ageLevels = ['Child', 'Teen', 'Adult', 'Senior'];
 
-  final Map<String, bool> _editingFields =
-      {}; // Map to track edit state for each field
+  final Map<String, bool> _editingFields = {};
 
   @override
   void initState() {
@@ -69,8 +78,6 @@ class _ProfilePageState extends State<ProfilePage> {
       } else {
         print('User document not found');
       }
-    } else {
-      print('No user signed in');
     }
   }
 
@@ -97,7 +104,7 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     } finally {
       setState(() {
-        _activeField = null; // Disable edit mode for the field
+        _activeField = null;
       });
     }
   }
@@ -105,9 +112,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildStylizedField(String label, String fieldKey,
       TextEditingController controller, List<String>? dropdownItems) {
     bool isEditing = _activeField == fieldKey;
-
-    String selectedValue =
-        controller.text; // Store selected value for dropdowns
+    String selectedValue = controller.text;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 15.0),
@@ -134,7 +139,6 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Label
                   Text(
                     label,
                     style: TextStyle(
@@ -142,7 +146,6 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: isEditing ? Colors.blue : Colors.grey,
                     ),
                   ),
-                  // Field Content
                   dropdownItems == null || !isEditing
                       ? TextField(
                           controller: controller,
@@ -172,26 +175,25 @@ class _ProfilePageState extends State<ProfilePage> {
                               controller.text = newValue;
                             });
                           },
-                          underline: const SizedBox(), // Remove underline
+                          underline: const SizedBox(),
                         ),
                 ],
               ),
             ),
           ),
-          // Edit/Save Icon
           Positioned(
             top: 10,
             right: 10,
             child: GestureDetector(
               onTap: () {
                 if (isEditing) {
-                  _saveField(fieldKey, controller); // Save changes
+                  _saveField(fieldKey, controller);
                   setState(() {
-                    _activeField = null; // Exit edit mode
+                    _activeField = null;
                   });
                 } else {
                   setState(() {
-                    _activeField = fieldKey; // Enable edit mode for this field
+                    _activeField = fieldKey;
                   });
                 }
               },
@@ -272,7 +274,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 8), // spacing between text
+                    const SizedBox(height: 8),
                     Text(
                       "Your role is $userRole",
                       style: const TextStyle(
@@ -298,9 +300,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
-                          MaterialPageRoute(
-                          builder: (context) => const ViewAccount(),
-                          )
+                            MaterialPageRoute(
+                              builder: (context) => const ViewAccount(),
+                            ),
                           );
                         },
                         child:
@@ -308,16 +310,20 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       GestureDetector(
                         onTap: () {
-                          print('Announcement clicked');
-                          // Add your logic here
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const AnnouncementManagement(),
+                            ),
+                          );
                         },
-                        child:
-                            _buildIconWithLabel(Icons.settings, 'Announcement'),
+                        child: _buildIconWithLabel(
+                            Icons.announcement, 'Announcement'),
                       ),
                       GestureDetector(
                         onTap: () {
-                          print('Logo clicked');
-                          // Add your logic here
+                          // Logo functionality
                         },
                         child: _buildIconWithLabel(
                             Icons.picture_in_picture, 'Logo'),
@@ -332,6 +338,21 @@ class _ProfilePageState extends State<ProfilePage> {
       );
     }
   }
+
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _nameController.dispose();
+    _icController.dispose();
+    _addressController.dispose();
+    _noTelController.dispose();
+    _genderController.dispose();
+    _postcodeController.dispose();
+    _stateController.dispose();
+    _householdCategoryController.dispose();
+    _ageLevelController.dispose();
+    super.dispose();
+  }
 }
 
 Widget _buildIconWithLabel(IconData icon, String label) {
@@ -339,7 +360,7 @@ Widget _buildIconWithLabel(IconData icon, String label) {
     mainAxisSize: MainAxisSize.min,
     children: [
       CircleAvatar(
-        radius: 30, // Icon size
+        radius: 30,
         backgroundColor: Colors.black,
         child: Icon(
           icon,

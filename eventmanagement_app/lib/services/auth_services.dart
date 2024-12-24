@@ -9,11 +9,24 @@ class AuthService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Sign Up
-  Future<UserCredential?> signUp({
+Future<UserCredential?> signUp({
     required String email,
     required String password,
     required BuildContext context,
   }) async {
+    if (!isValidPassword(password)) {
+      Fluttertoast.showToast(
+        msg:
+            'Password must be 8-12 characters long and include an uppercase letter, a number, and a special character.',
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.SNACKBAR,
+        backgroundColor: Colors.black54,
+        textColor: Colors.white,
+        fontSize: 14.0,
+      );
+      return null;
+    }
+
     try {
       UserCredential userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
@@ -55,6 +68,15 @@ class AuthService {
 
       return null;
     }
+  }
+
+  bool isValidPassword(String password) {
+    // Password must be at least 8 characters, max 12 characters,
+    // contain at least one uppercase letter, one lowercase letter,
+    // one digit, and one special character.
+    final passwordRegex = RegExp(
+        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,12}$');
+    return passwordRegex.hasMatch(password);
   }
 
   // Sign In
@@ -124,6 +146,83 @@ class AuthService {
       // Show an error message if signout fails
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error during signout: ${e.toString()}')),
+      );
+    }
+  }
+
+Future<bool> isEmailRegistered(String email) async {
+    // Check Firestore first
+    final query = await FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    if (query.docs.isNotEmpty) {
+      return true; // Email found in Firestore
+    }
+
+    // Check Firebase Authentication as a fallback
+    try {
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
+      return true; // Email exists in Firebase Authentication
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        return false; // Email not found
+      }
+      print("Error: $e");
+      return false; // Other errors
+    }
+  }
+
+
+  // Reset Password
+Future<void> resetPassword(String password, BuildContext context) async {
+    try {
+      // Validate the password
+      if (!isValidPassword(password)) {
+        Fluttertoast.showToast(
+          msg:
+              "Password must be 8-12 characters, include uppercase, lowercase, a number, and a special character.",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.SNACKBAR,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+        return;
+      }
+
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await user.updatePassword(password);
+        Fluttertoast.showToast(
+          msg: "Password successfully reset.",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.SNACKBAR,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+        Navigator.pop(context); // Navigate back on success
+      } else {
+        Fluttertoast.showToast(
+          msg: "No user is currently signed in.",
+          toastLength: Toast.LENGTH_LONG,
+          gravity: ToastGravity.SNACKBAR,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 14.0,
+        );
+      }
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "Failed to reset password. Please try again.",
+        toastLength: Toast.LENGTH_LONG,
+        gravity: ToastGravity.SNACKBAR,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 14.0,
       );
     }
   }
