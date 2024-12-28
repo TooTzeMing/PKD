@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:eventmanagement_app/screen/editevent.dart';
 import 'package:eventmanagement_app/screen/AttendanceReportScreen.dart';
+import 'package:eventmanagement_app/screen/RegisterReportScreen.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:eventmanagement_app/services/global.dart';
@@ -220,6 +221,21 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   );
                 },
                 child: const Text('View Attendance Report'),
+              ),
+              const SizedBox(height: 20), // Spacing between buttons
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => RegisterReportScreen(
+                        eventId: widget.eventId,
+                        eventName: event['name'] ?? 'Event',
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('View Registration Report'),
               ),
             ],
           ),

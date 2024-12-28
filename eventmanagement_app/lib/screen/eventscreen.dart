@@ -102,6 +102,38 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
+  void showConfirmationDialog(
+    BuildContext context, {
+    required String title,
+    required String content,
+    required VoidCallback onConfirm,
+  }) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('No'),
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+              },
+            ),
+            TextButton(
+              child: const Text('Yes'),
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+                onConfirm(); // Perform the action (register/unregister)
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void registerForEvent(String eventName, String eventId) async {
     final User? user = _auth.currentUser;
     if (user != null && !registeredEvents.containsKey(eventId)) {
@@ -179,24 +211,11 @@ class EventPageState extends State<EventScreen> {
             // After removing the user, check if 'registeredUsers' is empty
             final updatedDoc = await attendanceDocRef.get();
 
-// Check if the document exists and contains data
             if (!updatedDoc.exists ||
                 updatedDoc.data() == null ||
                 updatedDoc.data()!.isEmpty) {
               // If the document data is empty, delete the document
               await attendanceDocRef.delete();
-            } else {
-              // If document has data, handle it accordingly
-              List<dynamic> updatedRegisteredUsers =
-                  updatedDoc.data()?['registeredUsers'] ?? [];
-
-              // If 'registeredUsers' is empty, delete the document
-              if (updatedRegisteredUsers.isEmpty) {
-                await attendanceDocRef.update({
-                  'registeredUsers':
-                      FieldValue.delete(), // This will delete the field
-                });
-              }
             }
           }
         }
@@ -371,23 +390,19 @@ class EventPageState extends State<EventScreen> {
                 ),
               ),
               const SizedBox(height: 8.0),
-              /* Text(
-              event['description'] ?? 'No description provided',
-              style: TextStyle(
-                fontSize: 14.0,
-                fontStyle: FontStyle.italic,
-                color: Colors.black54,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),*/
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   if (isRegistered)
                     ElevatedButton(
-                      onPressed: () =>
-                          unregisterFromEvent(event['name'], eventId),
+                      onPressed: () => showConfirmationDialog(
+                        context,
+                        title: 'Remove Registration for ${event['name']}?',
+                        content:
+                            'Are you sure you want to remove your registration for this event?',
+                        onConfirm: () =>
+                            unregisterFromEvent(event['name'], eventId),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
                         foregroundColor: Colors.black,
@@ -399,7 +414,14 @@ class EventPageState extends State<EventScreen> {
                     )
                   else
                     ElevatedButton(
-                      onPressed: () => registerForEvent(event['name'], eventId),
+                      onPressed: () => showConfirmationDialog(
+                        context,
+                        title: 'Register for ${event['name']}?',
+                        content:
+                            'Are you sure you want to register for this event?',
+                        onConfirm: () =>
+                            registerForEvent(event['name'], eventId),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.lightGreen,
                         foregroundColor: Colors.black, // Text color
