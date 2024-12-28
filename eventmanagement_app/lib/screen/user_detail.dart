@@ -5,16 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:eventmanagement_app/services/global.dart';
-import 'package:eventmanagement_app/screen/user_detail.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+class UserDetail extends StatefulWidget {
+  const UserDetail({super.key});
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<UserDetail> createState() => _UserDetailState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _UserDetailState extends State<UserDetail> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _icController = TextEditingController();
@@ -212,173 +211,52 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    if (userRole != 'admin') {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 0),
-              padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.yellow,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Welcome! ${_usernameController.text}",
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Wrap(
-                    spacing: 20,
-                    runSpacing: 20,
-                    alignment: WrapAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const UserDetail(),
-                            ),
-                          );
-                        },
-                        child:
-                            _buildIconWithLabel(Icons.person, 'View Account'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          ],
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          'Account',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      );
-    } else {
-      return Scaffold(
-        backgroundColor: Colors.white,
-        body: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              margin: const EdgeInsets.only(top: 0),
-              padding: const EdgeInsets.symmetric(vertical: 50, horizontal: 20),
-              decoration: BoxDecoration(
-                color: Colors.yellow,
-                borderRadius: BorderRadius.circular(5),
+        backgroundColor: Colors.yellow,
+      ),
+      backgroundColor: Colors.white,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            children: [
+              Column(
+                children: [
+                  _buildStylizedField(
+                      'Username', 'username', _usernameController, null),
+                  _buildStylizedField('Name', 'name', _nameController, null),
+                  _buildStylizedField('IC', 'ic', _icController, null),
+                  _buildStylizedField(
+                      'Address', 'address', _addressController, null),
+                  _buildStylizedField(
+                      'Post Code', 'postcode', _postcodeController, null),
+                  _buildStylizedField(
+                      'Gender', 'gender', _genderController, _genders),
+                  _buildStylizedField(
+                      'State', 'state', _stateController, _states),
+                  _buildStylizedField(
+                      'Household Category',
+                      'household_category',
+                      _householdCategoryController,
+                      _householdCategories),
+                  _buildStylizedField('Age Level', 'age_level',
+                      _ageLevelController, _ageLevels),
+                ],
               ),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      "Welcome! ${_usernameController.text}",
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      "Your role is $userRole",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.black,
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                color: Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Wrap(
-                    spacing: 20,
-                    runSpacing: 20,
-                    alignment: WrapAlignment.start,
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ViewAccount(),
-                            ),
-                          );
-                        },
-                        child:
-                            _buildIconWithLabel(Icons.person, 'View Account'),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const AnnouncementManagement(),
-                            ),
-                          );
-                        },
-                        child: _buildIconWithLabel(
-                            Icons.announcement, 'Announcement'),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          // Logo functionality
-                        },
-                        child: _buildIconWithLabel(
-                            Icons.picture_in_picture, 'Logo'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          ],
+            ],
+          ),
         ),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _usernameController.dispose();
-    _nameController.dispose();
-    _icController.dispose();
-    _addressController.dispose();
-    _noTelController.dispose();
-    _genderController.dispose();
-    _postcodeController.dispose();
-    _stateController.dispose();
-    _householdCategoryController.dispose();
-    _ageLevelController.dispose();
-    super.dispose();
+      ),
+    );
   }
 }
 

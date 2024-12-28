@@ -273,12 +273,24 @@ class HomeScreenState extends State<HomeScreen> {
           Icon(Icons.people, color: Colors.black),
         ],
         inactiveIcons: const [
-          Text("Home", style: TextStyle(fontFamily: "RobotoCondensed")),
-          Text("Events"),
-          Text("Scan"),
-          Text("Profile"),
+          Text(
+            "Home",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "Events",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "Scan",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          Text(
+            "Profile",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ],
-        color: Colors.white,
+        color: Colors.yellow,
         circleWidth: 55,
         height: 60,
         onTap: (index) {
