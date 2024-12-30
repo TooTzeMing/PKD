@@ -133,21 +133,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       return Scaffold(
         appBar: AppBar(
           title: Text(event['name'] ?? 'Event Details'),
-          actions: [
-            // Edit button
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        EditEventScreen(eventDocument: eventDocument),
-                  ),
-                );
-              },
-            ),
-          ],
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
