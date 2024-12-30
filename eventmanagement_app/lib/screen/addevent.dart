@@ -1,28 +1,38 @@
-//import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-//import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart'; // For formatting the selected date
 
 class AddEventScreen extends StatefulWidget {
-  const AddEventScreen({super.key});
+  const AddEventScreen({Key? key}) : super(key: key);
 
   @override
   _AddEventScreenState createState() => _AddEventScreenState();
 }
 
 class _AddEventScreenState extends State<AddEventScreen> {
+  // Controllers for event details
   final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
   final TextEditingController _venueController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _maxParticipantsController =
       TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
-  // final ImagePicker _picker = ImagePicker();
-//  XFile? _imageFile;
-  String? _selectedCategory;
-  List<String> _categories = [];
+
+  // Controller for adding custom category
+  final TextEditingController _customCategoryController =
+      TextEditingController();
+
+  // The list of category documents from Firestore
+  // Each item is a map with { 'id': <docId>, 'name': <categoryName> }
+  List<Map<String, dynamic>> _categoryDocs = [];
+
+  // The name of the selected category from the dropdown
+  String? _selectedCategoryName;
+
+  // A flag to show progress when loading categories
   bool _isLoadingCategories = true;
+
+  // The [DateTime] selected via the calendar date picker
+  DateTime? _selectedDate;
 
   @override
   void initState() {
@@ -30,16 +40,23 @@ class _AddEventScreenState extends State<AddEventScreen> {
     _fetchCategories();
   }
 
-  void _fetchCategories() async {
+  /// Fetch categories from Firestore and store them in [_categoryDocs].
+  /// We also add a sentinel "Add Custom Category" item for user convenience.
+  Future<void> _fetchCategories() async {
     try {
-      var categoryCollection =
+      final querySnapshot =
           await FirebaseFirestore.instance.collection('categories').get();
-      var fetchedCategories = categoryCollection.docs
-          .map((doc) => doc.data()['name'] as String)
-          .toList();
+
       setState(() {
-        _categories = fetchedCategories;
-        _categories.add('Add Custom Category'); // Add custom input option
+        _categoryDocs = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'name': doc['name'] ?? '',
+          };
+        }).toList();
+
+        // Add sentinel item for adding a custom category
+        _categoryDocs.add({'id': 'custom', 'name': 'Add Custom Category'});
         _isLoadingCategories = false;
       });
     } catch (e) {
@@ -47,93 +64,79 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
-/*  void _pickImage() async {
-    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+  /// Open a native DatePicker for selecting [DateTime].
+  /// Store the chosen date in [_selectedDate].
+  Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    // If user selected a date and didn't cancel
+    if (picked != null && picked != _selectedDate) {
       setState(() {
-        _imageFile = pickedFile;
+        _selectedDate = picked;
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No image selected.'), backgroundColor: Colors.red),
-      );
     }
-  } 
+  }
 
-  Future<String?> _uploadImage(XFile image) async {
-    String fileName = 'events/${DateTime.now().millisecondsSinceEpoch}_${image.name}';
-    Reference storageRef = FirebaseStorage.instance.ref().child(fileName);
-    UploadTask uploadTask = storageRef.putFile(File(image.path));
-    TaskSnapshot snapshot = await uploadTask;
-    return await snapshot.ref.getDownloadURL();
-  } */
-
-  void _handleSubmit() async {
+  /// Validate and submit the new event to Firestore
+  Future<void> _handleSubmit() async {
+    // Basic field checks
     if (_nameController.text.isEmpty ||
-            _dateController.text.isEmpty ||
-            _venueController.text.isEmpty ||
-            _descriptionController.text.isEmpty ||
-            _maxParticipantsController.text.isEmpty ||
-            _selectedCategory == null //||
-        // _imageFile == null
-        ) {
+        _selectedDate == null ||
+        _venueController.text.isEmpty ||
+        _descriptionController.text.isEmpty ||
+        _maxParticipantsController.text.isEmpty ||
+        _selectedCategoryName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Please fill in all fields'),
-            backgroundColor: Colors.red),
+          content: Text('Please fill in all fields.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    Timestamp eventDate;
-    try {
-      DateTime parsedDate = DateTime.parse(_dateController.text);
-      eventDate = Timestamp.fromDate(parsedDate);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Invalid date format. Please use YYYY-MM-DD.'),
-            backgroundColor: Colors.red),
-      );
-      return;
-    }
-
+    // Validate maxParticipants
     int maxParticipants;
     try {
       maxParticipants = int.parse(_maxParticipantsController.text);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Invalid number for maximum participants.'),
-            backgroundColor: Colors.red),
+          content: Text('Invalid number for maximum participants.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    /* String? imageUrl = await _uploadImage(_imageFile!);
-    if (imageUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to upload image.'), backgroundColor: Colors.red),
-      );
-      return;
-    } */
+    // Convert the selectedDate to a Firebase Timestamp
+    Timestamp eventDate = Timestamp.fromDate(_selectedDate!);
 
+    // Prepare the data for Firestore
     Map<String, dynamic> eventData = {
-      'name': _nameController.text,
+      'name': _nameController.text.trim(),
       'date': eventDate,
-      'venue': _venueController.text,
-      'description': _descriptionController.text,
+      'venue': _venueController.text.trim(),
+      'description': _descriptionController.text.trim(),
       'maxParticipants': maxParticipants,
-      'category': _selectedCategory,
-      //    'imageUrl': imageUrl,
+      'category': _selectedCategoryName,
     };
 
     try {
-      DocumentReference eventRef =
+      // Add event data to Firestore
+      final eventRef =
           await FirebaseFirestore.instance.collection('events').add(eventData);
-      String eventId = eventRef.id;
+      final String eventId = eventRef.id;
+
+      // Store the generated event ID back into Firestore (optional)
       await eventRef.update({'id': eventId});
 
+      // Show success dialog
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -143,8 +146,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                Navigator.of(context)
-                    .pop(); // Optionally close the AddEventScreen after success
+                Navigator.of(context).pop(); // Go back from AddEventScreen
               },
               child: const Text('OK'),
             ),
@@ -154,12 +156,15 @@ class _AddEventScreenState extends State<AddEventScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-            content: Text('Failed to add event: $e'),
-            backgroundColor: Colors.red),
+          content: Text('Failed to add event: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
+  /// Show a dialog to add a custom category to Firestore.
+  /// After adding, we refresh the categories list.
   void _showAddCategoryDialog() {
     showDialog(
       context: context,
@@ -167,10 +172,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
         return AlertDialog(
           title: const Text('Add Custom Category'),
           content: TextField(
-            controller: _categoryController,
-            decoration: const InputDecoration(
-              hintText: 'Category Name',
-            ),
+            controller: _customCategoryController,
+            decoration: const InputDecoration(hintText: 'Category Name'),
           ),
           actions: <Widget>[
             TextButton(
@@ -180,14 +183,17 @@ class _AddEventScreenState extends State<AddEventScreen> {
             TextButton(
               child: const Text('Add'),
               onPressed: () async {
-                String newCategory = _categoryController.text;
+                String newCategory = _customCategoryController.text.trim();
                 if (newCategory.isNotEmpty) {
+                  // Add new category to Firestore
                   await FirebaseFirestore.instance
                       .collection('categories')
                       .add({'name': newCategory});
-                  _categoryController.clear();
+
+                  _customCategoryController.clear();
                   Navigator.of(context).pop();
-                  _fetchCategories(); // Refresh categories
+                  // Refresh categories
+                  await _fetchCategories();
                 }
               },
             ),
@@ -197,8 +203,133 @@ class _AddEventScreenState extends State<AddEventScreen> {
     );
   }
 
+  /// Show a dialog where the user can remove (delete) a category from Firestore.
+  /// We skip the sentinel "Add Custom Category".
+  void _showManageCategoriesDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // We'll list all categories except the "custom" sentinel
+        final displayableCategories = _categoryDocs
+            .where((cat) => cat['id'] != 'custom')
+            .toList();
+
+        return AlertDialog(
+          title: const Text('Manage Categories'),
+          content: displayableCategories.isEmpty
+              ? const Text('No categories available.')
+              : SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: displayableCategories.map((cat) {
+                      return ListTile(
+                        title: Text(cat['name']),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            // Confirm deletion
+                            bool? confirmDelete = await showDialog<bool>(
+                              context: context,
+                              builder: (BuildContext context) {
+                                return AlertDialog(
+                                  title: const Text('Delete Category'),
+                                  content: Text(
+                                      'Are you sure you want to delete "${cat['name']}" category?'),
+                                  actions: [
+                                    TextButton(
+                                      child: const Text('Cancel'),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(false),
+                                    ),
+                                    TextButton(
+                                      child: const Text('Delete'),
+                                      onPressed: () =>
+                                          Navigator.of(context).pop(true),
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+
+                            // If the user confirmed, delete from Firestore
+                            if (confirmDelete == true) {
+                              await _removeCategory(cat);
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+          actions: [
+            TextButton(
+              child: const Text('Close'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Remove a category from Firestore by its document ID.
+  /// Validation: If the category is still used by any event, disallow deletion.
+  Future<void> _removeCategory(Map<String, dynamic> cat) async {
+    final String docId = cat['id'] as String;
+    final String catName = cat['name'] as String;
+
+    try {
+      // 1. Check if this category is used by any event
+      final usedByEvents = await FirebaseFirestore.instance
+          .collection('events')
+          .where('category', isEqualTo: catName)
+          .limit(1) // We only need to check if at least one exists
+          .get();
+
+      if (usedByEvents.docs.isNotEmpty) {
+        // The category is still in use
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Cannot delete "$catName". It\'s used by existing events.\n'
+              'Delete those events or change their categories first.',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // 2. If not used, remove the category from Firestore
+      await FirebaseFirestore.instance
+          .collection('categories')
+          .doc(docId)
+          .delete();
+
+      // 3. Refresh categories
+      await _fetchCategories();
+
+      // 4. Show a success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Category "$catName" removed successfully.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      // Show an error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error removing category: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Main layout, styled similarly to EventDetailScreen
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Event'),
@@ -206,100 +337,183 @@ class _AddEventScreenState extends State<AddEventScreen> {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
+        actions: [
+          // A button to manage (remove) categories
+          if (!_isLoadingCategories)
+            IconButton(
+              icon: const Icon(Icons.settings),
+              tooltip: 'Manage Categories',
+              onPressed: _showManageCategoriesDialog,
+            ),
+        ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Event Name',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _dateController,
-              decoration: const InputDecoration(
-                labelText: 'Event Date',
-                hintText: 'e.g., YYYY-MM-DD',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.datetime,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _venueController,
-              decoration: const InputDecoration(
-                labelText: 'Venue',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
-                border: OutlineInputBorder(),
-              ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _maxParticipantsController,
-              decoration: const InputDecoration(
-                labelText: 'Maximum Participants',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 20),
-            if (!_isLoadingCategories) ...[
-              DropdownButton<String>(
-                value: _selectedCategory,
-                hint: const Text('Select Category'),
-                items:
-                    _categories.map<DropdownMenuItem<String>>((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  if (newValue == 'Add Custom Category') {
-                    _showAddCategoryDialog();
-                  } else {
-                    setState(() {
-                      _selectedCategory = newValue;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
-            ],
-            /*   GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  border: Border.all(color: Colors.grey[400]!),
-                  borderRadius: BorderRadius.circular(4),
+        padding: const EdgeInsets.all(16.0),
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Title
+                const Text(
+                  'Create a New Event',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                child: _imageFile == null
-                    ? Icon(Icons.camera_alt, color: Colors.grey[800])
-                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover),
-              ),
-            ), */
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _handleSubmit,
-              child: const Text('Submit'),
+                const Divider(height: 30, thickness: 1),
+
+                // Category Dropdown
+                if (_isLoadingCategories)
+                  // Show a loading spinner if categories are still fetching
+                  const Center(child: CircularProgressIndicator())
+                else ...[
+                  _buildLabel('Select Category'),
+                  DropdownButton<String>(
+                    value: _selectedCategoryName,
+                    isExpanded: true,
+                    hint: const Text('Choose a category'),
+                    items: _categoryDocs.map<DropdownMenuItem<String>>((cat) {
+                      return DropdownMenuItem<String>(
+                        value: cat['name'],
+                        child: Text(cat['name']),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      // If user selects "Add Custom Category"
+                      if (newValue == 'Add Custom Category') {
+                        _showAddCategoryDialog();
+                      } else {
+                        setState(() {
+                          _selectedCategoryName = newValue;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 20),
+
+                // Event Name
+                _buildLabel('Event Name'),
+                TextField(
+                  controller: _nameController,
+                  decoration: _buildInputDecoration('Enter event name'),
+                ),
+                const SizedBox(height: 20),
+
+                // Event Date (Date Picker)
+                _buildLabel('Event Date'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickDate,
+                        child: IgnorePointer(
+                          // This prevents direct editing
+                          ignoring: true,
+                          child: TextField(
+                            decoration: _buildInputDecoration(
+                              _selectedDate == null
+                                  ? 'Select event date'
+                                  : DateFormat('yyyy-MM-dd')
+                                      .format(_selectedDate!),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: _pickDate,
+                      tooltip: 'Select Date',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Venue
+                _buildLabel('Venue'),
+                TextField(
+                  controller: _venueController,
+                  decoration: _buildInputDecoration('Enter venue'),
+                ),
+                const SizedBox(height: 20),
+
+                // Description
+                _buildLabel('Description'),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: _buildInputDecoration('Enter a brief description'),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 20),
+
+                // Maximum Participants
+                _buildLabel('Maximum Participants'),
+                TextField(
+                  controller: _maxParticipantsController,
+                  decoration: _buildInputDecoration('Enter a number'),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
+                ],
+
+                // Submit Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _handleSubmit,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 14.0, horizontal: 40.0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                    ),
+                    child: const Text(
+                      'Submit',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  /// Helper method to build consistent text labels
+  Widget _buildLabel(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6.0),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  /// Helper method to build consistent input decorations
+  InputDecoration _buildInputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(
+        vertical: 12.0,
+        horizontal: 12.0,
       ),
     );
   }
@@ -307,11 +521,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _dateController.dispose();
     _venueController.dispose();
     _descriptionController.dispose();
     _maxParticipantsController.dispose();
-    _categoryController.dispose(); // Dispose the category controller
+    _customCategoryController.dispose();
     super.dispose();
   }
 }

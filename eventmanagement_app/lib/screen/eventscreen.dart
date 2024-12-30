@@ -119,7 +119,7 @@ class EventPageState extends State<EventScreen> {
           // Display the list of events
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore.collection('events').snapshots(),
+              stream: _firestore.collection('events').orderBy('date').snapshots(),
               builder: (context, snapshot) {
                 // Handle errors and loading states
                 if (snapshot.hasError) {
@@ -259,7 +259,9 @@ class EventPageState extends State<EventScreen> {
   }
 
   // Shows the category selection dialog
-  void showCategorySelection() {
+  void showCategorySelection() async {
+    await fetchCategories();
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
