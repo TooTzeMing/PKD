@@ -1,10 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:eventmanagement_app/screen/annoucement_management.dart';
-import 'package:eventmanagement_app/screen/viewAccount.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:eventmanagement_app/services/global.dart';
 
 class UserDetail extends StatefulWidget {
   const UserDetail({super.key});

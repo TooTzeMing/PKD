@@ -1,5 +1,4 @@
 import 'package:eventmanagement_app/screen/forgetpassword.dart';
-import 'package:eventmanagement_app/screen/resetpassword.dart';
 import 'package:eventmanagement_app/screen/viewAccount.dart';
 import 'screen/homescreen.dart';
 import 'package:flutter/material.dart';

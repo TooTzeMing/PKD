@@ -1,9 +1,9 @@
 import 'package:eventmanagement_app/screen/resetpassword.dart';
 import 'package:flutter/material.dart';
-import '../services/auth_services.dart';// Import the reset password page
+import '../services/auth_services.dart'; // Import the reset password page
 
 class ForgotPassword extends StatelessWidget {
-  const ForgotPassword({Key? key}) : super(key: key);
+  const ForgotPassword({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +78,8 @@ class ForgotPassword extends StatelessWidget {
 
                   try {
                     // Call the AuthService to verify the email address
-                    bool isEmailValid = await authService.isEmailRegistered(email);
+                    bool isEmailValid =
+                        await authService.isEmailRegistered(email);
 
                     if (isEmailValid) {
                       // Navigate to Reset Password Page

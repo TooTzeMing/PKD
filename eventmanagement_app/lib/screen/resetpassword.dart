@@ -3,7 +3,7 @@ import '../services/auth_services.dart';
 
 class ResetPassword extends StatelessWidget {
   final String email;
-  ResetPassword({Key? key, required this.email}) : super(key: key);
+  ResetPassword({super.key, required this.email});
 
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =

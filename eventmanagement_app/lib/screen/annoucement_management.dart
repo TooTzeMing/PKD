@@ -13,6 +13,24 @@ class _AnnouncementManagementState extends State<AnnouncementManagement> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _contentController = TextEditingController();
+  bool _isTitleEmpty = true;
+  bool _isContentEmpty = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Add listeners to controllers to update icon visibility
+    _titleController.addListener(() {
+      setState(() {
+        _isTitleEmpty = _titleController.text.isEmpty;
+      });
+    });
+    _contentController.addListener(() {
+      setState(() {
+        _isContentEmpty = _contentController.text.isEmpty;
+      });
+    });
+  }
 
   void _addAnnouncement() async {
     if (_formKey.currentState!.validate()) {
@@ -42,85 +60,100 @@ class _AnnouncementManagementState extends State<AnnouncementManagement> {
   void _showEditDialog(DocumentSnapshot doc) {
     final editTitleController = TextEditingController(text: doc['title']);
     final editContentController = TextEditingController(text: doc['content']);
+    bool isEditTitleEmpty = editTitleController.text.isEmpty;
+    bool isEditContentEmpty = editContentController.text.isEmpty;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Announcement'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: editTitleController,
-                decoration: const InputDecoration(
-                  labelText: 'Title',
-                  border: OutlineInputBorder(),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          // Add listeners for edit dialog controllers
+          editTitleController.addListener(() {
+            setState(() {
+              isEditTitleEmpty = editTitleController.text.isEmpty;
+            });
+          });
+          editContentController.addListener(() {
+            setState(() {
+              isEditContentEmpty = editContentController.text.isEmpty;
+            });
+          });
+
+          return AlertDialog(
+            title: const Text('Edit Announcement'),
+            content: SingleChildScrollView(
+              child: Form(
+                key: GlobalKey<FormState>(),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: editTitleController,
+                      decoration: InputDecoration(
+                        labelText: 'Title',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: isEditTitleEmpty
+                            ? const Icon(Icons.warning_amber_rounded,
+                                color: Colors.red)
+                            : null,
+                      ),
+                      validator: (value) =>
+                          value!.isEmpty ? 'Title is required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: editContentController,
+                      decoration: InputDecoration(
+                        labelText: 'Content',
+                        border: const OutlineInputBorder(),
+                        suffixIcon: isEditContentEmpty
+                            ? const Icon(Icons.warning_amber_rounded,
+                                color: Colors.red)
+                            : null,
+                      ),
+                      maxLines: 3,
+                      validator: (value) =>
+                          value!.isEmpty ? 'Content is required' : null,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: editContentController,
-                decoration: const InputDecoration(
-                  labelText: 'Content',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  try {
+                    await FirebaseFirestore.instance
+                        .collection('announcements')
+                        .doc(doc.id)
+                        .update({
+                      'title': editTitleController.text,
+                      'content': editContentController.text,
+                      'timestamp': Timestamp.now(),
+                    });
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                          content: Text('Announcement updated successfully')));
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content: Text('Error updating announcement: $e')));
+                    }
+                  }
+                },
+                child: const Text('Update'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                await FirebaseFirestore.instance
-                    .collection('announcements')
-                    .doc(doc.id)
-                    .update({
-                  'title': editTitleController.text,
-                  'content': editContentController.text,
-                  'timestamp': Timestamp.now(),
-                });
-                if (mounted) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                      content: Text('Announcement updated successfully')));
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text('Error updating announcement: $e')));
-                }
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
+          );
+        },
       ),
     );
-  }
-
-  void _deleteAnnouncement(String docId) async {
-    try {
-      await FirebaseFirestore.instance
-          .collection('announcements')
-          .doc(docId)
-          .delete();
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Announcement deleted successfully')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting announcement: $e')));
-      }
-    }
   }
 
   @override
@@ -140,23 +173,31 @@ class _AnnouncementManagementState extends State<AnnouncementManagement> {
                 children: [
                   TextFormField(
                     controller: _titleController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Title',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _isTitleEmpty
+                          ? const Icon(Icons.warning_amber_rounded,
+                              color: Colors.red)
+                          : null,
                     ),
                     validator: (value) =>
-                        value!.isEmpty ? 'Enter a title' : null,
+                        value!.isEmpty ? 'Title is required' : null,
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
                     controller: _contentController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Content',
-                      border: OutlineInputBorder(),
+                      border: const OutlineInputBorder(),
+                      suffixIcon: _isContentEmpty
+                          ? const Icon(Icons.warning_amber_rounded,
+                              color: Colors.red)
+                          : null,
                     ),
                     maxLines: 3,
                     validator: (value) =>
-                        value!.isEmpty ? 'Enter content' : null,
+                        value!.isEmpty ? 'Content is required' : null,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
@@ -251,9 +292,27 @@ class _AnnouncementManagementState extends State<AnnouncementManagement> {
                                       child: const Text('Cancel'),
                                     ),
                                     TextButton(
-                                      onPressed: () {
+                                      onPressed: () async {
                                         Navigator.pop(context);
-                                        _deleteAnnouncement(doc.id);
+                                        try {
+                                          await FirebaseFirestore.instance
+                                              .collection('announcements')
+                                              .doc(doc.id)
+                                              .delete();
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(const SnackBar(
+                                                    content: Text(
+                                                        'Announcement deleted successfully')));
+                                          }
+                                        } catch (e) {
+                                          if (mounted) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(SnackBar(
+                                                    content: Text(
+                                                        'Error deleting announcement: $e')));
+                                          }
+                                        }
                                       },
                                       child: const Text('Delete'),
                                     ),
