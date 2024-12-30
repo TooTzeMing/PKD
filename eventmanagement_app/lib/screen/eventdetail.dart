@@ -9,11 +9,12 @@ import 'package:eventmanagement_app/services/global.dart';
 import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:ui' as ui;
+import 'package:intl/intl.dart'; // <--- Make sure to import intl for date formatting
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
 
-  const EventDetailScreen({super.key, required this.eventId});
+  const EventDetailScreen({Key? key, required this.eventId}) : super(key: key);
 
   @override
   _EventDetailScreenState createState() => _EventDetailScreenState();
@@ -63,11 +64,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             children: [
               pw.Text(
                 eventName,
-                style:
-                    pw.TextStyle(fontSize: 50, fontWeight: pw.FontWeight.bold),
+                style: pw.TextStyle(
+                  fontSize: 50,
+                  fontWeight: pw.FontWeight.bold,
+                ),
               ),
-              pw.SizedBox(height: 10),
-              pw.Image(pw.MemoryImage(qrCodeImage), width: 550, height: 550),
+              pw.SizedBox(height: 20),
+              pw.Image(pw.MemoryImage(qrCodeImage), width: 300, height: 300),
             ],
           );
         },
@@ -97,20 +100,41 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // QR data is simply the event ID
     String qrData = widget.eventId;
 
+    // Show a loading indicator while fetching
     if (!isEventFetched) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
+    // Cast the event data to a Map
     Map<String, dynamic> event = eventDocument.data()! as Map<String, dynamic>;
+
+    // Prepare date/time display if 'date' exists and is a valid Timestamp
+    String eventDateString = 'No date provided';
+    if (event.containsKey('date') && event['date'] is Timestamp) {
+      DateTime dateTime = (event['date'] as Timestamp).toDate();
+      eventDateString = DateFormat('d MMM, yyyy').format(dateTime);
+    }
+
+    // Prepare category display
+    String eventCategory = 'No category provided';
+    if (event.containsKey('category')) {
+      eventCategory = event['category'] ?? 'No category provided';
+    }
+
+    // ===============================
+    // Non-admin (user) UI
+    // ===============================
     if (userRole != 'admin') {
       return Scaffold(
         appBar: AppBar(
           title: Text(event['name'] ?? 'Event Details'),
           actions: [
+            // Edit button
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
@@ -125,24 +149,122 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             ),
           ],
         ),
-        body: Padding(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                'Description: ${event['description'] ?? 'No description provided'}',
-                style: const TextStyle(fontSize: 16, height: 1.5),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                vertical: 20.0,
+                horizontal: 16.0,
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  // Event Name (again, for emphasis)
+                  Text(
+                    event['name'] ?? 'Event Name',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+
+                  // Event Date
+                  Row(
+                    children: [
+                      const Text(
+                        'Date: ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        eventDateString,
+                        style: const TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Category
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Category: ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          eventCategory,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Description
+                  Text(
+                    'Description:',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    event['description'] ?? 'No description provided',
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Show maxParticipants if available
+                  if (event.containsKey('maxParticipants')) ...[
+                    Text(
+                      'Maximum Participants:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey[800],
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      event['maxParticipants'].toString(),
+                      style: const TextStyle(fontSize: 16, height: 1.5),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       );
-    } else {
+    }
+
+    // ===============================
+    // Admin UI
+    // ===============================
+    else {
       return Scaffold(
         appBar: AppBar(
           title: Text(event['name'] ?? 'Event Details'),
           actions: [
+            // Edit button
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
@@ -155,59 +277,167 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 );
               },
             ),
+            // Delete button
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () => deleteEvent(),
-            )
+            ),
           ],
         ),
-        body: Padding(
+        body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Center(
-                child: QrImageView(
-                  data: qrData,
-                  size: 340.0,
+            children: [
+              // Card for the QR code
+              Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              ),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    printQRCode(qrData, event['name'] ?? 'Event');
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color.fromRGBO(
-                        255, 200, 88, 0.8), // Background color
-                    foregroundColor: Colors.white, // Text color
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 12.0, horizontal: 24.0), // Padding
-                    shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(30.0), // Rounded corners
-                    ),
-                    elevation: 5, // Shadow effect
-                  ),
-                  child: const Text(
-                    'Print QR Code',
-                    style: TextStyle(
-                      fontSize: 16, // Font size
-                      fontWeight: FontWeight.bold, // Font weight
-                    ),
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      // QR Code
+                      QrImageView(
+                        data: qrData,
+                        size: 300.0,
+                      ),
+                      const SizedBox(height: 20),
+                      // Print QR Code button
+                      ElevatedButton(
+                        onPressed: () {
+                          printQRCode(qrData, event['name'] ?? 'Event');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromRGBO(255, 200, 88, 0.8),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12.0,
+                            horizontal: 24.0,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30.0),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: const Text(
+                          'Print QR Code',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(height: 30),
-              Text(
-                'Description: ${event['description'] ?? 'No description provided'}',
-                style: const TextStyle(fontSize: 16, height: 1.5),
-              ),
-              Text(
-                'Maximum Participants: ${event['maxParticipants'].toString()}',
-                style: const TextStyle(fontSize: 16, height: 1.5),
+
+              // Card for event details
+              Card(
+                elevation: 4,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Event Name
+                      Text(
+                        event['name'] ?? 'Event Name',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+
+                      // Event Date
+                      Row(
+                        children: [
+                          const Text(
+                            'Date: ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            eventDateString,
+                            style: const TextStyle(
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Category
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Category: ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              eventCategory,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Description
+                      Text(
+                        'Description:',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        event['description'] ?? 'No description provided',
+                        style: const TextStyle(fontSize: 16, height: 1.5),
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Maximum Participants
+                      if (event.containsKey('maxParticipants')) ...[
+                        Text(
+                          'Maximum Participants:',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          event['maxParticipants'].toString(),
+                          style: const TextStyle(fontSize: 16, height: 1.5),
+                        ),
+                        const SizedBox(height: 20),
+                      ],
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 30),
+
+              // Attendance Report button
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -222,7 +452,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 },
                 child: const Text('View Attendance Report'),
               ),
-              const SizedBox(height: 20), // Spacing between buttons
+              const SizedBox(height: 20),
+
+              // Registration Report button 
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
