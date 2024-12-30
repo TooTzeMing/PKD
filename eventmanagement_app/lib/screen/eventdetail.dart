@@ -259,7 +259,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     builder: (context) =>
                         EditEventScreen(eventDocument: eventDocument),
                   ),
-                );
+                ).then((_){
+                  fetchEvent();
+                });
               },
             ),
             // Delete button
