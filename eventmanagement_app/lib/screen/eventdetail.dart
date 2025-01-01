@@ -132,7 +132,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     if (userRole != 'admin') {
       return Scaffold(
         appBar: AppBar(
-          title: Text(event['name'] ?? 'Event Details'),
+          title: Text(
+            event['name'] ?? 'Event Details',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.yellow,
         ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
@@ -247,7 +254,14 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     else {
       return Scaffold(
         appBar: AppBar(
-          title: Text(event['name'] ?? 'Event Details'),
+          title: Text(
+            event['name'] ?? 'Event Details',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          backgroundColor: Colors.yellow,
           actions: [
             // Edit button
             IconButton(
@@ -259,7 +273,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     builder: (context) =>
                         EditEventScreen(eventDocument: eventDocument),
                   ),
-                ).then((_){
+                ).then((_) {
                   fetchEvent();
                 });
               },
@@ -297,8 +311,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           printQRCode(qrData, event['name'] ?? 'Event');
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color.fromRGBO(255, 200, 88, 0.8),
+                          backgroundColor: const Color(0xFF6F8695),
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                             vertical: 12.0,
@@ -437,11 +450,29 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   );
                 },
-                child: const Text('View Attendance Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6F8695),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 24.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                  elevation: 5,
+                ),
+                child: const Text(
+                  'View Attendance Report',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
               const SizedBox(height: 20),
 
-              // Registration Report button 
+              // Registration Report button
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -454,7 +485,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   );
                 },
-                child: const Text('View Registration Report'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6F8695),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 12.0,
+                    horizontal: 24.0,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30.0),
+                  ),
+                  elevation: 5,
+                ),
+                child: const Text(
+                  'View Registration Report',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ],
           ),

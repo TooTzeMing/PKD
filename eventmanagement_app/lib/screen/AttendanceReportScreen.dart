@@ -177,7 +177,14 @@ class AttendanceReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$eventName - Attendance Report'),
+        title: Text(
+          '$eventName',
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.yellow,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
