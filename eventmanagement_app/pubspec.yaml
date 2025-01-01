@@ -49,11 +49,8 @@ dependencies:
   qr_flutter: ^4.1.0
   pdf: ^3.11.1
   printing: ^5.13.4
-<<<<<<< HEAD
   webview_flutter: ^4.10.0
-=======
   google_sign_in: ^6.2.1
->>>>>>> f19444cbed532ed0724968100af35caad10ac4ca
 
 dev_dependencies:
   flutter_test:
