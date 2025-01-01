@@ -1,8 +1,11 @@
+// Highlighted changes with  <-- ADDED
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:eventmanagement_app/screen/eventdetail.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+// If you have a global variable or method to get userRole, import or define it
 
 class EventScreen extends StatefulWidget {
   const EventScreen({Key? key}) : super(key: key);
@@ -27,6 +30,10 @@ class EventPageState extends State<EventScreen> {
   bool isDateFilterActive = false;
   DateTime? selectedStartDate;
   DateTime? selectedEndDate;
+
+  // <-- ADDED: Suppose you have a way to determine user role
+  String userRole = 'user'; 
+  // or fetch from your global services, e.g. `userRole = globalUserRole;`
 
   @override
   void initState() {
@@ -75,7 +82,6 @@ class EventPageState extends State<EventScreen> {
     return DateFormat('d MMM, yyyy').format(dateTime);
   }
 
-  // Main build method
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -119,7 +125,10 @@ class EventPageState extends State<EventScreen> {
           // Display the list of events
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore.collection('events').orderBy('date').snapshots(),
+              stream: _firestore
+                  .collection('events')
+                  .orderBy('date') // default ascending by date
+                  .snapshots(),
               builder: (context, snapshot) {
                 // Handle errors and loading states
                 if (snapshot.hasError) {
@@ -129,8 +138,22 @@ class EventPageState extends State<EventScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                // Convert snapshot data to a list of documents
                 List<DocumentSnapshot> documents = snapshot.data!.docs;
+
+                
+                if (userRole != 'admin') {
+                  final now = DateTime.now();
+                  documents = documents.where((doc) {
+                    if (doc['date'] != null && doc['date'] is Timestamp) {
+                      final DateTime eventDate = (doc['date'] as Timestamp).toDate();
+                      // Show only upcoming (non-expired) events
+                      return eventDate.isAfter(now);
+                    } else {
+                      // If no date, treat it as no event or skip
+                      return false;
+                    }
+                  }).toList();
+                }
 
                 // Filter by search text (event name)
                 if (_searchController.text.isNotEmpty) {
@@ -158,9 +181,6 @@ class EventPageState extends State<EventScreen> {
                     selectedEndDate != null) {
                   documents = documents.where((doc) {
                     DateTime eventDate = (doc['date'] as Timestamp).toDate();
-
-                    // Filter only events within the chosen date range
-                    // Subtract 1 day from start, add 1 day to end to make it inclusive
                     return eventDate.isAfter(
                           selectedStartDate!.subtract(const Duration(days: 1)),
                         ) &&
@@ -177,14 +197,12 @@ class EventPageState extends State<EventScreen> {
                   );
                 }
 
-                // Display the list of filtered events
                 return ListView(
                   padding: const EdgeInsets.all(16.0),
                   children: documents.map((DocumentSnapshot document) {
                     Map<String, dynamic> event =
                         document.data()! as Map<String, dynamic>;
 
-                    // Format the event date
                     String formattedDate =
                         event['date'] != null && event['date'] is Timestamp
                             ? formatDate(event['date'] as Timestamp)
@@ -193,7 +211,6 @@ class EventPageState extends State<EventScreen> {
                     String eventId = document.id;
                     bool isRegistered = registeredEvents.containsKey(eventId);
 
-                    // Build each event tile
                     return buildEventTile(
                       context,
                       event,
@@ -211,7 +228,7 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
-  // Shows the main filter dialog (category or date)
+  // Filter dialog, category date range, etc.
   void showFilterDialog() {
     showDialog(
       context: context,
@@ -258,10 +275,8 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
-  // Shows the category selection dialog
   void showCategorySelection() async {
     await fetchCategories();
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -289,15 +304,12 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
-  // Picks a date range using Flutter's built-in showDateRangePicker
   void pickDateRange() async {
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
-
-    // Validate the picked date range
     if (picked != null && picked.start.isBefore(picked.end)) {
       setState(() {
         selectedStartDate = picked.start;
@@ -305,8 +317,6 @@ class EventPageState extends State<EventScreen> {
         isDateFilterActive = true;
       });
     } else if (picked != null) {
-      // If the user selects a range but the start date is not before the end date,
-      // show a Snackbar with an error message.
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Invalid date range selected. Please try again.'),
@@ -315,7 +325,7 @@ class EventPageState extends State<EventScreen> {
     }
   }
 
-  // Builds each event tile in the list
+  // Build each event tile
   Widget buildEventTile(
     BuildContext context,
     Map<String, dynamic> event,
@@ -325,7 +335,6 @@ class EventPageState extends State<EventScreen> {
   ) {
     return GestureDetector(
       onTap: () {
-        // Navigate to a detail screen for the selected event
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -378,7 +387,6 @@ class EventPageState extends State<EventScreen> {
                 ],
               ),
               const SizedBox(height: 4.0),
-              // Venue
               Text(
                 event['venue'] ?? 'Venue',
                 style: const TextStyle(
@@ -388,7 +396,6 @@ class EventPageState extends State<EventScreen> {
               ),
               const SizedBox(height: 8.0),
 
-              // Register / Unregister Button
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -396,14 +403,11 @@ class EventPageState extends State<EventScreen> {
                     ElevatedButton(
                       onPressed: () => showConfirmationDialog(
                         context,
-                        title:
-                            'Remove Registration for ${event['name']}?',
+                        title: 'Remove Registration for ${event['name']}?',
                         content:
                             'Are you sure you want to remove your registration for this event?',
-                        onConfirm: () => unregisterFromEvent(
-                          event['name'],
-                          eventId,
-                        ),
+                        onConfirm: () =>
+                            unregisterFromEvent(event['name'], eventId),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.redAccent,
@@ -421,14 +425,12 @@ class EventPageState extends State<EventScreen> {
                         title: 'Register for ${event['name']}?',
                         content:
                             'Are you sure you want to register for this event?',
-                        onConfirm: () => registerForEvent(
-                          event['name'],
-                          eventId,
-                        ),
+                        onConfirm: () =>
+                            registerForEvent(event['name'], eventId),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.lightGreen,
-                        foregroundColor: Colors.black, // Text color
+                        foregroundColor: Colors.black,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
@@ -445,7 +447,6 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
-  // Show a confirmation dialog for registering or unregistering
   void showConfirmationDialog(
     BuildContext context, {
     required String title,
@@ -462,14 +463,14 @@ class EventPageState extends State<EventScreen> {
             TextButton(
               child: const Text('No'),
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
+                Navigator.pop(context);
               },
             ),
             TextButton(
               child: const Text('Yes'),
               onPressed: () {
-                Navigator.pop(context); // Close the dialog
-                onConfirm(); // Perform the action (register/unregister)
+                Navigator.pop(context);
+                onConfirm();
               },
             ),
           ],
@@ -478,39 +479,33 @@ class EventPageState extends State<EventScreen> {
     );
   }
 
-  // Register for an event
   void registerForEvent(String eventName, String eventId) async {
     final User? user = _auth.currentUser;
     if (user != null && !registeredEvents.containsKey(eventId)) {
       try {
-        // Add the registration to the 'registration' collection
         await _firestore.collection('registration').add({
           'registereduser': user.uid,
           'registeredevent': eventId,
         });
 
-        // Update the 'attendance' collection
         final attendanceDoc = _firestore.collection('attendance').doc(eventId);
         await attendanceDoc.set({
           'registeredUsers': FieldValue.arrayUnion([
             {
               'userId': user.uid,
-              'timestamp': DateTime.now(), // Add timestamp
+              'timestamp': DateTime.now(),
             }
           ]),
         }, SetOptions(merge: true));
 
-        // Update the local state
         setState(() {
           registeredEvents[eventId] = true;
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registered for $eventName')),
         );
       } catch (error) {
-        // Handle errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Registration failed: $error')),
         );
@@ -518,12 +513,10 @@ class EventPageState extends State<EventScreen> {
     }
   }
 
-  // Unregister from an event
   void unregisterFromEvent(String eventName, String eventId) async {
     final User? user = _auth.currentUser;
     if (user != null && registeredEvents.containsKey(eventId)) {
       try {
-        // Remove the registration from the 'registration' collection
         var registrations = await _firestore
             .collection('registration')
             .where('registereduser', isEqualTo: user.uid)
@@ -533,9 +526,7 @@ class EventPageState extends State<EventScreen> {
           await _firestore.collection('registration').doc(doc.id).delete();
         }
 
-        // Fetch the attendance document to find the exact entry for this user
-        final attendanceDocRef =
-            _firestore.collection('attendance').doc(eventId);
+        final attendanceDocRef = _firestore.collection('attendance').doc(eventId);
         final attendanceDoc = await attendanceDocRef.get();
 
         if (attendanceDoc.exists) {
@@ -548,34 +539,27 @@ class EventPageState extends State<EventScreen> {
           );
 
           if (userEntry != null) {
-            // Remove the user's entry from the 'registeredUsers' array
             await attendanceDocRef.update({
               'registeredUsers': FieldValue.arrayRemove([userEntry]),
             });
 
-            // After removing the user, check if 'registeredUsers' is empty
             final updatedDoc = await attendanceDocRef.get();
-
             if (!updatedDoc.exists ||
                 updatedDoc.data() == null ||
                 updatedDoc.data()!.isEmpty) {
-              // If the document data is empty, delete the document
               await attendanceDocRef.delete();
             }
           }
         }
 
-        // Update the local state
         setState(() {
           registeredEvents.remove(eventId);
         });
 
-        // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Unregistered from $eventName')),
         );
       } catch (error) {
-        // Handle errors
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Unregistration failed: $error')),
         );

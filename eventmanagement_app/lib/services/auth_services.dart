@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:eventmanagement_app/services/global.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -79,14 +80,16 @@ Future<UserCredential?> signUp({
     return passwordRegex.hasMatch(password);
   }
 
-  // Sign In
-  Future<void> signin(
-      {required String email,
-      required String password,
-      required BuildContext context}) async {
+
+Future<Map<String, String?>> signin({
+    required String email,
+    required String password,
+  }) async {
     try {
-      await FirebaseAuth.instance
-          .signInWithEmailAndPassword(email: email, password: password);
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
       User? user = FirebaseAuth.instance.currentUser;
 
@@ -94,25 +97,79 @@ Future<UserCredential?> signUp({
         await _getUserRole(user); // Store the user role globally
       }
 
-      await Future.delayed(const Duration(seconds: 1));
-      Navigator.popAndPushNamed(context, "/home");
+      return {"emailError": null, "passwordError": null};
     } on FirebaseAuthException catch (e) {
-      String message = '';
-      if (e.code == 'invalid-email') {
-        message = 'No user found for that email.';
-      } else if (e.code == 'invalid-credential') {
-        message = 'Wrong password provided for that user.';
+      if (e.code == 'user-not-found') {
+        return {
+          "emailError": "No user found for this email",
+          "passwordError": null
+        };
+      } else if (e.code == 'wrong-password') {
+        return {"emailError": null, "passwordError": "Incorrect password"};
+      } else {
+        return {
+          "emailError": null,
+          "passwordError": "Something went wrong. Please try again."
+        };
       }
-      Fluttertoast.showToast(
-        msg: message,
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.SNACKBAR,
-        backgroundColor: Colors.black54,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
     }
   }
+
+Future<Map<String, String>?> googleSignIn() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      if (googleUser == null) {
+        // User canceled the sign-in
+        return null;
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
+
+      final User? user = userCredential.user;
+
+      if (user != null) {
+        // Check if user data is complete
+        final bool isDataComplete = await _isUserDataComplete(user.uid);
+
+        if (!isDataComplete) {
+          // If data is not complete, return userId and username
+          return {
+            'userId': user.uid,
+            'username': user.displayName ?? 'Anonymous',
+          };
+        }
+
+        // If data is complete, return null
+        return null;
+      }
+    } catch (e) {
+      throw Exception('Error during Google Sign-In: ${e.toString()}');
+    }
+
+    throw Exception('Something went wrong.');
+  }
+
+  Future<bool> _isUserDataComplete(String uid) async {
+      final userData =
+          await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      if (userData.exists) {
+        final data = userData.data();
+        return data != null ; // Add other required fields here
+      }
+      return false;
+    }
+
 
   Future<void> _getUserRole(User user) async {
     try {
@@ -150,82 +207,66 @@ Future<UserCredential?> signUp({
     }
   }
 
-Future<bool> isEmailRegistered(String email) async {
-    // Check Firestore first
-    final query = await FirebaseFirestore.instance
-        .collection('users')
-        .where('email', isEqualTo: email)
-        .limit(1)
-        .get();
-
-    if (query.docs.isNotEmpty) {
-      return true; // Email found in Firestore
-    }
-
-    // Check Firebase Authentication as a fallback
+Future<void> sendPasswordResetEmail(String email) async {
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      return true; // Email exists in Firebase Authentication
-    } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found') {
-        return false; // Email not found
-      }
+      print("Password reset email sent");
+    } catch (e) {
       print("Error: $e");
-      return false; // Other errors
     }
   }
 
 
   // Reset Password
-Future<void> resetPassword(String password, BuildContext context) async {
-    try {
-      // Validate the password
-      if (!isValidPassword(password)) {
-        Fluttertoast.showToast(
-          msg:
-              "Password must be 8-12 characters, include uppercase, lowercase, a number, and a special character.",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.SNACKBAR,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 14.0,
-        );
-        return;
-      }
+// Future<void> resetPassword(String password, BuildContext context) async {
+//     try {
+//       // Validate the password
+//       if (!isValidPassword(password)) {
+//         Fluttertoast.showToast(
+//           msg:
+//               "Password must be 8-12 characters, include uppercase, lowercase, a number, and a special character.",
+//           toastLength: Toast.LENGTH_LONG,
+//           gravity: ToastGravity.SNACKBAR,
+//           backgroundColor: Colors.red,
+//           textColor: Colors.white,
+//           fontSize: 14.0,
+//         );
+//         return;
+//       }
 
-      User? user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await user.updatePassword(password);
-        Fluttertoast.showToast(
-          msg: "Password successfully reset.",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.SNACKBAR,
-          backgroundColor: Colors.green,
-          textColor: Colors.white,
-          fontSize: 14.0,
-        );
-        Navigator.pop(context); // Navigate back on success
-      } else {
-        Fluttertoast.showToast(
-          msg: "No user is currently signed in.",
-          toastLength: Toast.LENGTH_LONG,
-          gravity: ToastGravity.SNACKBAR,
-          backgroundColor: Colors.red,
-          textColor: Colors.white,
-          fontSize: 14.0,
-        );
-      }
-    } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Failed to reset password. Please try again.",
-        toastLength: Toast.LENGTH_LONG,
-        gravity: ToastGravity.SNACKBAR,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 14.0,
-      );
-    }
-  }
+//       User? user = FirebaseAuth.instance.currentUser;
+//       if (user != null) {
+//         await user.updatePassword(password);
+//         Fluttertoast.showToast(
+//           msg: "Password successfully reset.",
+//           toastLength: Toast.LENGTH_LONG,
+//           gravity: ToastGravity.SNACKBAR,
+//           backgroundColor: Colors.green,
+//           textColor: Colors.white,
+//           fontSize: 14.0,
+//         );
+//         Navigator.pop(context); // Navigate back on success
+//       } else {
+//         Fluttertoast.showToast(
+//           msg: "No user is currently signed in.",
+//           toastLength: Toast.LENGTH_LONG,
+//           gravity: ToastGravity.SNACKBAR,
+//           backgroundColor: Colors.red,
+//           textColor: Colors.white,
+//           fontSize: 14.0,
+//         );
+//       }
+//     } catch (e) {
+//       Fluttertoast.showToast(
+//         msg: "Failed to reset password. Please try again.",
+//         toastLength: Toast.LENGTH_LONG,
+//         gravity: ToastGravity.SNACKBAR,
+//         backgroundColor: Colors.red,
+//         textColor: Colors.white,
+//         fontSize: 14.0,
+//       );
+//     }
+//   }
 
   // Listen to Authentication State
   Stream<User?> get authStateChanges => _auth.authStateChanges();

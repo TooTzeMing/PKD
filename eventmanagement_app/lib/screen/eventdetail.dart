@@ -9,7 +9,7 @@ import 'package:eventmanagement_app/services/global.dart';
 import 'dart:typed_data';
 import 'package:pdf/widgets.dart' as pw;
 import 'dart:ui' as ui;
-import 'package:intl/intl.dart'; // <--- Make sure to import intl for date formatting
+import 'package:intl/intl.dart'; // Make sure to import intl
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
@@ -52,7 +52,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Future<void> printQRCode(String qrData, String eventName) async {
     final pdf = pw.Document();
 
-    // Generate a QR code image
     final qrCodeImage = await _generateQRCodeImage(qrData);
 
     pdf.addPage(
@@ -77,7 +76,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ),
     );
 
-    // Trigger printing
     await Printing.layoutPdf(
       onLayout: (format) async => pdf.save(),
     );
@@ -92,7 +90,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       gapless: true,
     );
 
-    // Convert QR code to an image
     final image = await qrPainter.toImage(200);
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     return byteData!.buffer.asUint8List();
@@ -100,35 +97,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // QR data is simply the event ID
     String qrData = widget.eventId;
 
-    // Show a loading indicator while fetching
     if (!isEventFetched) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // Cast the event data to a Map
     Map<String, dynamic> event = eventDocument.data()! as Map<String, dynamic>;
 
-    // Prepare date/time display if 'date' exists and is a valid Timestamp
+    // Prepare date display (if 'date' is a valid Timestamp)
     String eventDateString = 'No date provided';
     if (event.containsKey('date') && event['date'] is Timestamp) {
       DateTime dateTime = (event['date'] as Timestamp).toDate();
       eventDateString = DateFormat('d MMM, yyyy').format(dateTime);
     }
 
-    // Prepare category display
+    // ADDED FOR TIME (Check if the "time" field exists)
+    String eventTimeString = 'No time provided';
+    if (event.containsKey('time') && event['time'] != null) {
+      eventTimeString = event['time'] as String;
+    }
+
+    // Category
     String eventCategory = 'No category provided';
     if (event.containsKey('category')) {
       eventCategory = event['category'] ?? 'No category provided';
     }
 
-    // ===============================
-    // Non-admin (user) UI
-    // ===============================
+    // ================
+    // Non-admin UI
+    // ================
     if (userRole != 'admin') {
       return Scaffold(
         appBar: AppBar(
@@ -156,7 +156,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  // Event Name (again, for emphasis)
                   Text(
                     event['name'] ?? 'Event Name',
                     style: const TextStyle(
@@ -166,7 +165,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                   const SizedBox(height: 10),
 
-                  // Event Date
+                  // Date
                   Row(
                     children: [
                       const Text(
@@ -178,9 +177,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
                       Text(
                         eventDateString,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+
+                  // ADDED FOR TIME
+                  Row(
+                    children: [
+                      const Text(
+                        'Time: ',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                         ),
+                      ),
+                      Text(
+                        eventTimeString,
+                        style: const TextStyle(fontSize: 16),
                       ),
                     ],
                   ),
@@ -223,7 +238,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  // Show maxParticipants if available
                   if (event.containsKey('maxParticipants')) ...[
                     Text(
                       'Maximum Participants:',
@@ -248,9 +262,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       );
     }
 
-    // ===============================
+    // ================
     // Admin UI
-    // ===============================
+    // ================
     else {
       return Scaffold(
         appBar: AppBar(
@@ -263,22 +277,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           ),
           backgroundColor: Colors.yellow,
           actions: [
-            // Edit button
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        EditEventScreen(eventDocument: eventDocument),
+                    builder: (context) => EditEventScreen(
+                      eventDocument: eventDocument,
+                    ),
                   ),
                 ).then((_) {
+<<<<<<< HEAD
+=======
+                  // Refresh the event details after returning
+>>>>>>> f19444cbed532ed0724968100af35caad10ac4ca
                   fetchEvent();
                 });
               },
             ),
-            // Delete button
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: () => deleteEvent(),
@@ -289,7 +306,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // Card for the QR code
+              // QR code card
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
@@ -299,13 +316,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      // QR Code
                       QrImageView(
                         data: qrData,
                         size: 300.0,
                       ),
                       const SizedBox(height: 20),
-                      // Print QR Code button
                       ElevatedButton(
                         onPressed: () {
                           printQRCode(qrData, event['name'] ?? 'Event');
@@ -336,7 +351,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Card for event details
+              // Event details card
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -347,7 +362,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Event Name
                       Text(
                         event['name'] ?? 'Event Name',
                         style: const TextStyle(
@@ -357,7 +371,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Event Date
+                      // Date
                       Row(
                         children: [
                           const Text(
@@ -369,9 +383,25 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                           ),
                           Text(
                             eventDateString,
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+
+                      // ADDED FOR TIME
+                      Row(
+                        children: [
+                          const Text(
+                            'Time: ',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                          Text(
+                            eventTimeString,
+                            style: const TextStyle(fontSize: 16),
                           ),
                         ],
                       ),
@@ -437,7 +467,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
               const SizedBox(height: 30),
 
-              // Attendance Report button
+              // Attendance Report
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -472,7 +502,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
               const SizedBox(height: 20),
 
+<<<<<<< HEAD
               // Registration Report button
+=======
+              // Registration Report
+>>>>>>> f19444cbed532ed0724968100af35caad10ac4ca
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(

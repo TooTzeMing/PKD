@@ -78,24 +78,23 @@ class ForgotPassword extends StatelessWidget {
 
                   try {
                     // Call the AuthService to verify the email address
-                    bool isEmailValid =
-                        await authService.isEmailRegistered(email);
+                    await authService.sendPasswordResetEmail(email);
 
-                    if (isEmailValid) {
-                      // Navigate to Reset Password Page
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ResetPassword(email: email),
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Email is not registered."),
-                        ),
-                      );
-                    }
+                    // if (isEmailValid) {
+                    //   // Navigate to Reset Password Page
+                    //   Navigator.push(
+                    //     context,
+                    //     MaterialPageRoute(
+                    //       builder: (context) => ResetPassword(email: email),
+                    //     ),
+                    //   );
+                    // } else {
+                    //   ScaffoldMessenger.of(context).showSnackBar(
+                    //     const SnackBar(
+                    //       content: Text("Email is not registered."),
+                    //     ),
+                    //   );
+                    // }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
