@@ -90,6 +90,13 @@ Future<Map<String, String?>> signin({
         email: email,
         password: password,
       );
+
+      User? user = FirebaseAuth.instance.currentUser;
+
+      if (user != null) {
+        await _getUserRole(user); // Store the user role globally
+      }
+
       return {"emailError": null, "passwordError": null};
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found') {
