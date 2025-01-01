@@ -49,6 +49,7 @@ dependencies:
   qr_flutter: ^4.1.0
   pdf: ^3.11.1
   printing: ^5.13.4
+  google_sign_in: ^6.2.1
 
 dev_dependencies:
   flutter_test:
