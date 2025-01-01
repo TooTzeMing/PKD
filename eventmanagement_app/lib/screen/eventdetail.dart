@@ -288,10 +288,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     ),
                   ),
                 ).then((_) {
-<<<<<<< HEAD
-=======
                   // Refresh the event details after returning
->>>>>>> f19444cbed532ed0724968100af35caad10ac4ca
                   fetchEvent();
                 });
               },
@@ -502,11 +499,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ),
               const SizedBox(height: 20),
 
-<<<<<<< HEAD
-              // Registration Report button
-=======
               // Registration Report
->>>>>>> f19444cbed532ed0724968100af35caad10ac4ca
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
