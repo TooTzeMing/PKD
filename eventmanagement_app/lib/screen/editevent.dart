@@ -22,6 +22,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
   // We'll store the event's existing date as a DateTime
   DateTime? _selectedDate;
 
+  // We'll store the event's existing time as a TimeOfDay
+  TimeOfDay? _selectedTime;
+
   // The category user selects
   String? _selectedCategory;
 
@@ -47,9 +50,58 @@ class _EditEventScreenState extends State<EditEventScreen> {
         widget.eventDocument['date'] is Timestamp) {
       Timestamp existingDate = widget.eventDocument['date'] as Timestamp;
       _selectedDate = existingDate.toDate();
-    } else {
-      // If there's no date or it's invalid, you could default to today or null
-      _selectedDate = null;
+    }
+
+    // Retrieve existing time if available (stored as a String, e.g. "10:30 AM")
+    if (widget.eventDocument.data() is Map &&
+        (widget.eventDocument.data() as Map).containsKey('time')) {
+      final String? timeString = widget.eventDocument['time'];
+      if (timeString != null && timeString.isNotEmpty) {
+        _selectedTime = _parseTimeOfDay(timeString);
+      }
+    }
+  }
+
+  /// Attempt to parse a time string (e.g. "10:30 AM") into a TimeOfDay
+  TimeOfDay? _parseTimeOfDay(String timeString) {
+    try {
+      final format = DateFormat.jm(); // e.g. "h:mm a"
+      final DateTime dateTime = format.parse(timeString);
+      return TimeOfDay(hour: dateTime.hour, minute: dateTime.minute);
+    } catch (e) {
+      // If parsing fails, return null
+      return null;
+    }
+  }
+
+  /// Pick a new date from a calendar
+  Future<void> _pickDate() async {
+    final DateTime now = DateTime.now();
+    final DateTime initialDate = _selectedDate ?? now;
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (pickedDate != null && pickedDate != _selectedDate) {
+      setState(() {
+        _selectedDate = pickedDate;
+      });
+    }
+  }
+
+  /// Pick a new time from the native time picker
+  Future<void> _pickTime() async {
+    final TimeOfDay now = TimeOfDay.now();
+    final TimeOfDay? pickedTime = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? now,
+    );
+    if (pickedTime != null && pickedTime != _selectedTime) {
+      setState(() {
+        _selectedTime = pickedTime;
+      });
     }
   }
 
@@ -61,10 +113,11 @@ class _EditEventScreenState extends State<EditEventScreen> {
         _venueController.text.trim().isEmpty ||
         _maxParticipantsController.text.trim().isEmpty ||
         _selectedDate == null ||
+        _selectedTime == null ||
         _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill in all fields and pick a date.'),
+          content: Text('Please fill in all fields, including date and time.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -88,6 +141,9 @@ class _EditEventScreenState extends State<EditEventScreen> {
     // Convert selected date to timestamp
     Timestamp eventDate = Timestamp.fromDate(_selectedDate!);
 
+    // Format the selected time as a String (e.g. "10:30 AM")
+    final String formattedTime = _selectedTime!.format(context);
+
     try {
       await FirebaseFirestore.instance
           .collection('events')
@@ -99,6 +155,7 @@ class _EditEventScreenState extends State<EditEventScreen> {
         'maxParticipants': maxParticipants,
         'category': _selectedCategory,
         'date': eventDate,
+        'time': formattedTime, // <-- store the updated time
       });
       Navigator.pop(context); // Go back after successful update
     } catch (e) {
@@ -108,23 +165,6 @@ class _EditEventScreenState extends State<EditEventScreen> {
           backgroundColor: Colors.red,
         ),
       );
-    }
-  }
-
-  /// Pick a new date from a calendar
-  Future<void> _pickDate() async {
-    final DateTime now = DateTime.now();
-    final DateTime initialDate = _selectedDate ?? now;
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: initialDate,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
-    if (pickedDate != null && pickedDate != _selectedDate) {
-      setState(() {
-        _selectedDate = pickedDate;
-      });
     }
   }
 
@@ -257,6 +297,34 @@ class _EditEventScreenState extends State<EditEventScreen> {
                       icon: const Icon(Icons.calendar_today),
                       onPressed: _pickDate,
                       tooltip: 'Select Date',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Event Time
+                _buildLabel('Event Time'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickTime,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: TextField(
+                            decoration: _buildInputDecoration(
+                              _selectedTime == null
+                                  ? 'Select event time'
+                                  : _selectedTime!.format(context),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.access_time),
+                      onPressed: _pickTime,
+                      tooltip: 'Select Time',
                     ),
                   ],
                 ),

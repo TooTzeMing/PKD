@@ -34,6 +34,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
   // The [DateTime] selected via the calendar date picker
   DateTime? _selectedDate;
 
+  // The TimeOfDay for the event
+  TimeOfDay? _selectedTime;
+
   @override
   void initState() {
     super.initState();
@@ -82,18 +85,34 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
   }
 
+  /// Open a native TimePicker for selecting [TimeOfDay].
+  /// Store the chosen time in [_selectedTime].
+  Future<void> _pickTime() async {
+    final TimeOfDay now = TimeOfDay.now();
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: now,
+    );
+    if (picked != null && picked != _selectedTime) {
+      setState(() {
+        _selectedTime = picked;
+      });
+    }
+  }
+
   /// Validate and submit the new event to Firestore
   Future<void> _handleSubmit() async {
     // Basic field checks
     if (_nameController.text.isEmpty ||
         _selectedDate == null ||
+        _selectedTime == null ||
         _venueController.text.isEmpty ||
         _descriptionController.text.isEmpty ||
         _maxParticipantsController.text.isEmpty ||
         _selectedCategoryName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please fill in all fields.'),
+          content: Text('Please fill in all fields, including date and time.'),
           backgroundColor: Colors.red,
         ),
       );
@@ -115,12 +134,17 @@ class _AddEventScreenState extends State<AddEventScreen> {
     }
 
     // Convert the selectedDate to a Firebase Timestamp
+    // For the date portion only
     Timestamp eventDate = Timestamp.fromDate(_selectedDate!);
+
+    // Format the TimeOfDay into a readable string (e.g., "10:30 AM")
+    final String formattedTime = _selectedTime!.format(context);
 
     // Prepare the data for Firestore
     Map<String, dynamic> eventData = {
       'name': _nameController.text.trim(),
       'date': eventDate,
+      'time': formattedTime, // Store the time as a string
       'venue': _venueController.text.trim(),
       'description': _descriptionController.text.trim(),
       'maxParticipants': maxParticipants,
@@ -209,10 +233,8 @@ class _AddEventScreenState extends State<AddEventScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // We'll list all categories except the "custom" sentinel
-        final displayableCategories = _categoryDocs
-            .where((cat) => cat['id'] != 'custom')
-            .toList();
+        final displayableCategories =
+            _categoryDocs.where((cat) => cat['id'] != 'custom').toList();
 
         return AlertDialog(
           title: const Text('Manage Categories'),
@@ -227,7 +249,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () async {
-                            // Confirm deletion
                             bool? confirmDelete = await showDialog<bool>(
                               context: context,
                               builder: (BuildContext context) {
@@ -251,7 +272,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                               },
                             );
 
-                            // If the user confirmed, delete from Firestore
                             if (confirmDelete == true) {
                               await _removeCategory(cat);
                             }
@@ -279,15 +299,13 @@ class _AddEventScreenState extends State<AddEventScreen> {
     final String catName = cat['name'] as String;
 
     try {
-      // 1. Check if this category is used by any event
       final usedByEvents = await FirebaseFirestore.instance
           .collection('events')
           .where('category', isEqualTo: catName)
-          .limit(1) // We only need to check if at least one exists
+          .limit(1)
           .get();
 
       if (usedByEvents.docs.isNotEmpty) {
-        // The category is still in use
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -300,16 +318,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
         return;
       }
 
-      // 2. If not used, remove the category from Firestore
-      await FirebaseFirestore.instance
-          .collection('categories')
-          .doc(docId)
-          .delete();
+      await FirebaseFirestore.instance.collection('categories').doc(docId).delete();
 
-      // 3. Refresh categories
       await _fetchCategories();
-
-      // 4. Show a success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Category "$catName" removed successfully.'),
@@ -317,7 +328,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
         ),
       );
     } catch (e) {
-      // Show an error message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error removing category: $e'),
@@ -329,7 +339,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Main layout, styled similarly to EventDetailScreen
+    // Main layout
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Event'),
@@ -338,7 +348,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          // A button to manage (remove) categories
           if (!_isLoadingCategories)
             IconButton(
               icon: const Icon(Icons.settings),
@@ -355,8 +364,10 @@ class _AddEventScreenState extends State<AddEventScreen> {
             borderRadius: BorderRadius.circular(15),
           ),
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(vertical: 20.0, horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(
+              vertical: 20.0,
+              horizontal: 16.0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -370,9 +381,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ),
                 const Divider(height: 30, thickness: 1),
 
-                // Category Dropdown
                 if (_isLoadingCategories)
-                  // Show a loading spinner if categories are still fetching
                   const Center(child: CircularProgressIndicator())
                 else ...[
                   _buildLabel('Select Category'),
@@ -387,7 +396,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                       );
                     }).toList(),
                     onChanged: (String? newValue) {
-                      // If user selects "Add Custom Category"
                       if (newValue == 'Add Custom Category') {
                         _showAddCategoryDialog();
                       } else {
@@ -398,6 +406,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     },
                   ),
                   const SizedBox(height: 20),
+                ],
 
                 // Event Name
                 _buildLabel('Event Name'),
@@ -407,7 +416,7 @@ class _AddEventScreenState extends State<AddEventScreen> {
                 ),
                 const SizedBox(height: 20),
 
-                // Event Date (Date Picker)
+                // Event Date
                 _buildLabel('Event Date'),
                 Row(
                   children: [
@@ -415,7 +424,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                       child: InkWell(
                         onTap: _pickDate,
                         child: IgnorePointer(
-                          // This prevents direct editing
                           ignoring: true,
                           child: TextField(
                             decoration: _buildInputDecoration(
@@ -432,6 +440,34 @@ class _AddEventScreenState extends State<AddEventScreen> {
                       icon: const Icon(Icons.calendar_today),
                       onPressed: _pickDate,
                       tooltip: 'Select Date',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Event Time
+                _buildLabel('Event Time'),
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: _pickTime,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: TextField(
+                            decoration: _buildInputDecoration(
+                              _selectedTime == null
+                                  ? 'Select event time'
+                                  : _selectedTime!.format(context),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.access_time),
+                      onPressed: _pickTime,
+                      tooltip: 'Select Time',
                     ),
                   ],
                 ),
@@ -462,7 +498,6 @@ class _AddEventScreenState extends State<AddEventScreen> {
                   keyboardType: TextInputType.number,
                 ),
                 const SizedBox(height: 20),
-                ],
 
                 // Submit Button
                 Center(
@@ -470,7 +505,9 @@ class _AddEventScreenState extends State<AddEventScreen> {
                     onPressed: _handleSubmit,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
-                          vertical: 14.0, horizontal: 40.0),
+                        vertical: 14.0,
+                        horizontal: 40.0,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.0),
                       ),
