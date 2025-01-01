@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:eventmanagement_app/screen/eventdetail.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:eventmanagement_app/services/global.dart';
+
 // If you have a global variable or method to get userRole, import or define it
 
 class EventScreen extends StatefulWidget {
@@ -30,10 +32,6 @@ class EventPageState extends State<EventScreen> {
   bool isDateFilterActive = false;
   DateTime? selectedStartDate;
   DateTime? selectedEndDate;
-
-  // <-- ADDED: Suppose you have a way to determine user role
-  String userRole = 'user'; 
-  // or fetch from your global services, e.g. `userRole = globalUserRole;`
 
   @override
   void initState() {
