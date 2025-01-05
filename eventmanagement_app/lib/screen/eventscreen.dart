@@ -138,12 +138,12 @@ class EventPageState extends State<EventScreen> {
 
                 List<DocumentSnapshot> documents = snapshot.data!.docs;
 
-                
                 if (userRole != 'admin') {
                   final now = DateTime.now();
                   documents = documents.where((doc) {
                     if (doc['date'] != null && doc['date'] is Timestamp) {
-                      final DateTime eventDate = (doc['date'] as Timestamp).toDate();
+                      final DateTime eventDate =
+                          (doc['date'] as Timestamp).toDate();
                       // Show only upcoming (non-expired) events
                       return eventDate.isAfter(now);
                     } else {
@@ -323,6 +323,7 @@ class EventPageState extends State<EventScreen> {
     }
   }
 
+  // mok change
   // Build each event tile
   Widget buildEventTile(
     BuildContext context,
@@ -394,56 +395,108 @@ class EventPageState extends State<EventScreen> {
               ),
               const SizedBox(height: 8.0),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (isRegistered)
-                    ElevatedButton(
-                      onPressed: () => showConfirmationDialog(
-                        context,
-                        title: 'Remove Registration for ${event['name']}?',
-                        content:
-                            'Are you sure you want to remove your registration for this event?',
-                        onConfirm: () =>
-                            unregisterFromEvent(event['name'], eventId),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('Remove'),
-                    )
-                  else
-                    ElevatedButton(
-                      onPressed: () => showConfirmationDialog(
-                        context,
-                        title: 'Register for ${event['name']}?',
-                        content:
-                            'Are you sure you want to register for this event?',
-                        onConfirm: () =>
-                            registerForEvent(event['name'], eventId),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.lightGreen,
-                        foregroundColor: Colors.black,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('Register'),
-                    ),
-                  const SizedBox(width: 8),
-                ],
+              // Fetch maxParticipants and registered users
+              FutureBuilder<DocumentSnapshot>(
+                future: _firestore.collection('events').doc(eventId).get(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Text("Error fetching event data.");
+                  }
+
+                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return const Text("Event not found.");
+                  }
+
+                  var eventData = snapshot.data!.data() as Map<String, dynamic>;
+
+                  int maxParticipants = eventData['maxParticipants'] ?? 0;
+
+                  // Get the count of registered users
+                  return FutureBuilder<DocumentSnapshot>(
+                    future:
+                        _firestore.collection('attendance').doc(eventId).get(),
+                    builder: (context, attendanceSnapshot) {
+                      if (attendanceSnapshot.connectionState ==
+                          ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+
+                      if (attendanceSnapshot.hasError) {
+                        return const Text("Error fetching attendance data.");
+                      }
+
+                      int registeredUsersCount = 0;
+                      if (attendanceSnapshot.hasData &&
+                          attendanceSnapshot.data != null) {
+                        registeredUsersCount = (attendanceSnapshot
+                                .data!['registeredUsers'] as List)
+                            .length;
+                      }
+
+                      bool isFull = registeredUsersCount >= maxParticipants;
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          if (isRegistered)
+                            ElevatedButton(
+                              onPressed: () => showConfirmationDialog(
+                                context,
+                                title:
+                                    'Remove Registration for ${event['name']}?',
+                                content:
+                                    'Are you sure you want to remove your registration for this event?',
+                                onConfirm: () =>
+                                    unregisterFromEvent(event['name'], eventId),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.redAccent,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: const Text('Remove'),
+                            )
+                          else
+                            ElevatedButton(
+                              onPressed: isFull
+                                  ? null // Disable the button if event is full
+                                  : () => showConfirmationDialog(
+                                        context,
+                                        title: 'Register for ${event['name']}?',
+                                        content:
+                                            'Are you sure you want to register for this event?',
+                                        onConfirm: () => registerForEvent(
+                                            event['name'], eventId),
+                                      ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    isFull ? Colors.grey : Colors.lightGreen,
+                                foregroundColor: Colors.black,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(isFull ? 'Event Full' : 'Register'),
+                            ),
+                          const SizedBox(width: 8),
+                        ],
+                      );
+                    },
+                  );
+                },
               ),
             ],
           ),
         ),
       ),
     );
-  }
+  } // mok change
 
   void showConfirmationDialog(
     BuildContext context, {
@@ -524,12 +577,14 @@ class EventPageState extends State<EventScreen> {
           await _firestore.collection('registration').doc(doc.id).delete();
         }
 
-        final attendanceDocRef = _firestore.collection('attendance').doc(eventId);
+        final attendanceDocRef =
+            _firestore.collection('attendance').doc(eventId);
         final attendanceDoc = await attendanceDocRef.get();
 
         if (attendanceDoc.exists) {
           List<dynamic> registeredUsers =
-              (attendanceDoc.data()?['registeredUsers'] as List<dynamic>?) ?? [];
+              (attendanceDoc.data()?['registeredUsers'] as List<dynamic>?) ??
+                  [];
 
           Map<String, dynamic>? userEntry = registeredUsers.firstWhere(
             (entry) => entry['userId'] == user.uid,
