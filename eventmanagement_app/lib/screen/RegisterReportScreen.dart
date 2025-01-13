@@ -14,7 +14,8 @@ class RegisterReportScreen extends StatelessWidget {
     required this.eventName,
   });
 
-  Future<List<Map<String, dynamic>>> fetchRegisteredUsers() async {
+  Future<List<Map<String, dynamic>>> fetchRegisteredUsers(
+      {bool detailed = false}) async {
     final attendanceSnapshot = await FirebaseFirestore.instance
         .collection('attendance')
         .doc(eventId)
@@ -45,10 +46,25 @@ class RegisterReportScreen extends StatelessWidget {
       final userInfo =
           registeredUsers.firstWhere((user) => user['userId'] == userId);
 
-      return {
-        'name': userDoc['name'],
-        'timestamp': userInfo['timestamp'],
-      };
+      if (detailed) {
+        return {
+          'name': userDoc['name'],
+          'ic': userDoc['ic'],
+          'gender': userDoc['gender'],
+          'no_tel': userDoc['no_tel'],
+          'address': userDoc['address'],
+          'postcode': userDoc['postcode'],
+          'state': userDoc['state'],
+          'age_level': userDoc['age_level'],
+          'household_category': userDoc['household_category'],
+          'timestamp': userInfo['timestamp'],
+        };
+      } else {
+        return {
+          'name': userDoc['name'],
+          'timestamp': userInfo['timestamp'],
+        };
+      }
     }).toList();
   }
 
@@ -58,8 +74,9 @@ class RegisterReportScreen extends StatelessWidget {
     return DateFormat('HH:mm:ss a dd-MM-yyyy').format(dateTime);
   }
 
-  Future<void> generateAndDownloadPdf(
-      List<Map<String, dynamic>> registeredUsers) async {
+  Future<void> generateAndDownloadPdf() async {
+    final registeredUsers =
+        await fetchRegisteredUsers(detailed: true); // Fetch full details
     final pdf = pw.Document();
 
     pdf.addPage(
@@ -83,16 +100,35 @@ class RegisterReportScreen extends StatelessWidget {
               ),
               pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
-                headers: ['Name', 'Registered Time'],
+                headers: [
+                  'Name',
+                  'IC',
+                  'Gender',
+                  'Phone',
+                  'Address',
+                  'Postcode',
+                  'State',
+                  'Age Level',
+                  'Household Category',
+                  'Registered Time'
+                ],
                 data: registeredUsers.map((user) {
                   return [
                     user['name'],
+                    user['ic'],
+                    user['gender'],
+                    user['no_tel'],
+                    user['address'],
+                    user['postcode'],
+                    user['state'],
+                    user['age_level'],
+                    user['household_category'],
                     formatTimestamp(user['timestamp']),
                   ];
                 }).toList(),
                 border: pw.TableBorder.all(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                cellStyle: const pw.TextStyle(fontSize: 12),
+                cellStyle: const pw.TextStyle(fontSize: 10),
                 cellAlignment: pw.Alignment.centerLeft,
               ),
             ],
@@ -111,7 +147,18 @@ class RegisterReportScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('$eventName - Registration Report'),
+        backgroundColor: Colors.yellow, // Set the background color
+        title: Text(
+          eventName, // Display the event name
+          style: const TextStyle(
+            color: Colors.black, // Set text color
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        centerTitle: true, // Center the title
+        iconTheme: const IconThemeData(
+            color: Colors.black), // Change back button color
+        elevation: 0, // Remove shadow
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -119,7 +166,7 @@ class RegisterReportScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Registration Report',
+              'Registered Report',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
@@ -147,15 +194,15 @@ class RegisterReportScreen extends StatelessWidget {
                         child: ListView(
                           children: [
                             const Text(
-                              'Registered Users:',
+                              'Registered:',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
                             ...registeredUsers.map((user) {
                               return ListTile(
                                 leading: const Icon(Icons.person_outline),
                                 title: Text(user['name']),
-                                subtitle:
-                                    Text(formatTimestamp(user['timestamp'])),
+                                subtitle: Text(
+                                    'Registered: ${formatTimestamp(user['timestamp'])}'),
                               );
                             }),
                           ],
@@ -163,7 +210,7 @@ class RegisterReportScreen extends StatelessWidget {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          generateAndDownloadPdf(registeredUsers);
+                          generateAndDownloadPdf();
                         },
                         child: const Text('Download PDF'),
                       ),
